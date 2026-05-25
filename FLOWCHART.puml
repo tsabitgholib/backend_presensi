@@ -1,0 +1,83 @@
+@startuml Presensi Flowchart
+
+title Alur Kerja Sistem Presensi YBWSA
+
+skinparam activity {
+    BackgroundColor #f0f8ff
+    BorderColor #4682b4
+    ArrowColor #4682b4
+}
+
+skinparam start {
+    BackgroundColor #2ecc71
+}
+
+skinparam end {
+    BackgroundColor #e74c3c
+}
+
+start
+
+:Mulai;
+
+partition "Autentikasi" {
+    if (Jenis User?) then (Admin)
+        :Login Admin\nAuthAdminController;
+        :Verifikasi JWT Token;
+        
+        if (Role Admin?) then (super_admin)
+            :Akses Semua Unit;
+        elseif (admin_unit)
+            :Akses Hanya Unit Tertentu;
+        elseif (monitoring)
+            :Akses Unit Monitoring;
+        endif
+        
+    elseif (Pegawai)
+        :Login Pegawai\nAuthPegawaiController;
+        :Verifikasi Perangkat\n(check-device);
+        :Verifikasi JWT Token;
+    endif
+}
+
+partition "Fitur Utama" {
+    fork
+        :Manajemen Data\nUnit/Pegawai/Shift;
+    fork again
+        :Pengajuan\nCuti/Izin/Sakit;
+        :Approval oleh Admin;
+    fork again
+        :Presensi Harian;
+        partition "Presensi" {
+            :Catat Waktu Masuk;
+            :Validasi Lokasi\n(Point-in-Polygon);
+            :Cek Jadwal Shift/Dinas;
+            :Tentukan Status Masuk\n(tepat/terlambat);
+            
+            if (Saat Pulang?) then (Ya)
+                :Catat Waktu Pulang;
+                :Tentukan Status Pulang\n(pulang awal/tepat);
+                :Hitung Overtime (Lembur);
+            endif
+            
+            :Tentukan Status Akhir Presensi;
+        }
+    fork again
+        :Presensi Event/Dinas;
+    fork again
+        :Generate Tidak Absen\n(TidakAbsenController);
+        :Cek Hari Libur;
+        :Cek Pengajuan Disetujui;
+        :Buat Data Presensi Tidak Hadir;
+    end fork
+}
+
+partition "Laporan & Dashboard" {
+    :Rekap Presensi\nHarian/Bulanan/Tahunan;
+    :Dashboard Ringkasan;
+    :Laporan Kehadiran;
+}
+
+stop
+
+@enduml

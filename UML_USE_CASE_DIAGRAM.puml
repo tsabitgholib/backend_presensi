@@ -1,0 +1,118 @@
+@startuml
+
+!define RECTANGLE class
+skinparam usecase {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor Black
+}
+skinparam actor {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+}
+
+' ==============================================
+' UML Use Case Diagram - Backend Presensi YBWSA
+' ==============================================
+
+left to right direction
+
+' Actors
+actor "Super Admin" as SuperAdmin
+actor "Admin Unit" as AdminUnit
+actor "Admin Monitoring" as AdminMonitoring
+actor "Pegawai" as Pegawai
+
+' System Boundary
+rectangle "Sistem Presensi YBWSA" {
+    ' Admin Use Cases
+    usecase "Login Admin" as UC_AdminLogin
+    usecase "Kelola Admin" as UC_ManageAdmin
+    usecase "Kelola Unit & UnitDetail" as UC_ManageUnit
+    usecase "Kelola Shift & ShiftDetail" as UC_ManageShift
+    usecase "Lihat Data Pegawai" as UC_ViewPegawai
+    usecase "Approve Pengajuan Cuti" as UC_ApproveCuti
+    usecase "Approve Pengajuan Izin" as UC_ApproveIzin
+    usecase "Approve Pengajuan Sakit" as UC_ApproveSakit
+    usecase "Presensi Manual Pegawai" as UC_ManualPresensi
+    usecase "Generate Tidak Absen" as UC_GenerateAbsent
+    usecase "Lihat Rekap Presensi" as UC_ViewRecap
+    usecase "Lihat Dashboard" as UC_ViewDashboard
+    usecase "Kelola Hari Libur" as UC_ManageHoliday
+    usecase "Kelola Jadwal Dinas" as UC_ManageDinas
+    usecase "Kelola Event" as UC_ManageEvent
+    usecase "Kelola Lauk Pauk" as UC_ManageLaukPauk
+    
+    ' Pegawai Use Cases
+    usecase "Login Pegawai" as UC_PegawaiLogin
+    usecase "Verifikasi Perangkat" as UC_CheckDevice
+    usecase "Presensi Masuk" as UC_PresensiMasuk
+    usecase "Presensi Pulang" as UC_PresensiPulang
+    usecase "Presensi Event/Dinas" as UC_PresensiEvent
+    usecase "Ajukan Cuti" as UC_AjukanCuti
+    usecase "Ajukan Izin" as UC_AjukanIzin
+    usecase "Ajukan Sakit" as UC_AjukanSakit
+    usecase "Lihat Riwayat Pengajuan" as UC_ViewPengajuanHistory
+    usecase "Lihat Riwayat Presensi" as UC_ViewPresensiHistory
+    usecase "Lihat Laporan Kehadiran" as UC_ViewAttendanceReport
+}
+
+' Super Admin Relationships
+SuperAdmin --> UC_AdminLogin
+SuperAdmin --> UC_ManageAdmin
+SuperAdmin --> UC_ManageUnit
+SuperAdmin --> UC_ManageShift
+SuperAdmin --> UC_ViewPegawai
+SuperAdmin --> UC_ApproveCuti
+SuperAdmin --> UC_ApproveIzin
+SuperAdmin --> UC_ApproveSakit
+SuperAdmin --> UC_ManualPresensi
+SuperAdmin --> UC_GenerateAbsent
+SuperAdmin --> UC_ViewRecap
+SuperAdmin --> UC_ViewDashboard
+SuperAdmin --> UC_ManageHoliday
+SuperAdmin --> UC_ManageDinas
+SuperAdmin --> UC_ManageEvent
+SuperAdmin --> UC_ManageLaukPauk
+
+' Admin Unit Relationships
+AdminUnit --> UC_AdminLogin
+AdminUnit --> UC_ManageUnit
+AdminUnit --> UC_ManageShift
+AdminUnit --> UC_ViewPegawai
+AdminUnit --> UC_ApproveCuti
+AdminUnit --> UC_ApproveIzin
+AdminUnit --> UC_ApproveSakit
+AdminUnit --> UC_ManualPresensi
+AdminUnit --> UC_GenerateAbsent
+AdminUnit --> UC_ViewRecap
+AdminUnit --> UC_ViewDashboard
+AdminUnit --> UC_ManageHoliday
+AdminUnit --> UC_ManageDinas
+AdminUnit --> UC_ManageEvent
+AdminUnit --> UC_ManageLaukPauk
+
+' Admin Monitoring Relationships
+AdminMonitoring --> UC_AdminLogin
+AdminMonitoring --> UC_ViewPegawai
+AdminMonitoring --> UC_ViewRecap
+AdminMonitoring --> UC_ViewDashboard
+
+' Pegawai Relationships
+Pegawai --> UC_PegawaiLogin
+Pegawai --> UC_CheckDevice
+Pegawai --> UC_PresensiMasuk
+Pegawai --> UC_PresensiPulang
+Pegawai --> UC_PresensiEvent
+Pegawai --> UC_AjukanCuti
+Pegawai --> UC_AjukanIzin
+Pegawai --> UC_AjukanSakit
+Pegawai --> UC_ViewPengajuanHistory
+Pegawai --> UC_ViewPresensiHistory
+Pegawai --> UC_ViewAttendanceReport
+
+' Include/Extend Relationships
+UC_PresensiMasuk ..> UC_CheckDevice : <<include>>
+UC_PresensiPulang ..> UC_PresensiMasuk : <<extend>>
+
+@enduml

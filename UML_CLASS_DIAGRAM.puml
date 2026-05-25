@@ -1,0 +1,260 @@
+@startuml
+
+!define TABLE(className) class className << (T,LightSkyBlue) >>
+!define MODEL(className) class className << (M,LightGreen) >>
+
+hide circle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+' ==============================================
+' UML Class Diagram - Backend Presensi YBWSA
+' ==============================================
+
+' Models
+MODEL(Admin) {
+  - id: bigint
+  - name: string
+  - email: string
+  - password: string
+  - role: enum (super_admin, admin_unit, monitoring)
+  - unit_id: bigint (nullable)
+  - status: enum (aktif, nonaktif)
+  + index()
+  + store()
+  + update()
+  + destroy()
+}
+
+MODEL(AdminMonitoringUnit) {
+  - id: bigint
+  - admin_id: bigint
+  - unit_id: bigint
+}
+
+MODEL(Unit) {
+  - id: bigint
+  - nama: string
+  + getUnitsWithLocation()
+}
+
+MODEL(UnitDetail) {
+  - id: bigint
+  - unit_id: bigint
+  - lokasi: json (nullable)
+  + assignPegawai()
+  + updateLocation()
+}
+
+MODEL(Shift) {
+  - id: bigint
+  - nama: string
+  - unit_id: bigint
+  + storeShiftDetail()
+  + updateShiftDetail()
+  + destroyShiftDetail()
+}
+
+MODEL(ShiftDetail) {
+  - id: bigint
+  - shift_id: bigint
+  - hari: int
+  - jam_masuk: time
+  - jam_pulang: time
+  + assignPegawaiToShiftDetail()
+}
+
+MODEL(MsOrang) {
+  - id: bigint
+  - no_ktp: string
+  - nama: string
+}
+
+MODEL(MsPegawai) {
+  - id: bigint
+  - id_orang: bigint
+  - presensi_ms_unit_detail_id: bigint
+  - presensi_shift_detail_id: bigint
+  + getByUnitIdPresensi()
+  + getLokasiPresensi()
+}
+
+MODEL(Presensi) {
+  - id: bigint
+  - no_ktp: string
+  - shift_id: bigint
+  - shift_detail_id: bigint
+  - waktu_masuk: datetime
+  - waktu_pulang: datetime (nullable)
+  - lokasi_masuk: json (nullable)
+  - lokasi_pulang: json (nullable)
+  - status_masuk: enum (tepat, terlambat, tidak_absen_masuk)
+  - status_pulang: enum (tepat, pulang_awal, tidak_absen_pulang)
+  - status_presensi: enum (hadir, dinas, cuti, sakit, izin, tidak_hadir, libur)
+  - keterangan_masuk: text (nullable)
+  - keterangan_pulang: text (nullable)
+  - overtime: boolean
+  + store()
+  + today()
+  + history()
+  + rekapHistoryBulananPegawai()
+}
+
+MODEL(PresensiJadwalDinas) {
+  - id: bigint
+  - no_ktp: string
+  - tanggal: date
+  - keterangan: text
+}
+
+MODEL(Event) {
+  - id: bigint
+  - nama: string
+  - unit_id: bigint
+  - tanggal_mulai: datetime
+  - tanggal_selesai: datetime
+  - lokasi: json
+  - lokasi2: json (nullable)
+  - lokasi3: json (nullable)
+  + addPegawaiToEvent()
+  + removePegawaiFromEvent()
+}
+
+MODEL(EventsPegawai) {
+  - id: bigint
+  - event_id: bigint
+  - pegawai_id: bigint
+}
+
+MODEL(PresensiEvent) {
+  - id: bigint
+  - event_id: bigint
+  - no_ktp: string
+  - waktu_masuk: datetime
+  - waktu_pulang: datetime (nullable)
+  - lokasi_masuk: json (nullable)
+  - lokasi_pulang: json (nullable)
+  + store()
+  + getHistoryPresensiByEventPegawai()
+}
+
+MODEL(Cuti) {
+  - id: bigint
+  - nama: string
+  - jumlah_hari: int
+}
+
+MODEL(Izin) {
+  - id: bigint
+  - nama: string
+}
+
+MODEL(Sakit) {
+  - id: bigint
+  - nama: string
+}
+
+MODEL(PengajuanCuti) {
+  - id: bigint
+  - pegawai_id: bigint
+  - cuti_id: bigint
+  - tanggal_mulai: date
+  - tanggal_selesai: date
+  - alasan: text
+  - status: enum (pending, diterima, ditolak)
+  + store()
+  + approve()
+  + history()
+}
+
+MODEL(PengajuanIzin) {
+  - id: bigint
+  - pegawai_id: bigint
+  - izin_id: bigint
+  - tanggal_mulai: date
+  - tanggal_selesai: date
+  - alasan: text
+  - status: enum (pending, diterima, ditolak)
+  + store()
+  + approve()
+  + history()
+}
+
+MODEL(PengajuanSakit) {
+  - id: bigint
+  - pegawai_id: bigint
+  - sakit_id: bigint
+  - tanggal_mulai: date
+  - tanggal_selesai: date
+  - alasan: text
+  - surat_sakit: string (nullable)
+  - status: enum (pending, diterima, ditolak)
+  + store()
+  + approve()
+  + history()
+}
+
+MODEL(HariLibur) {
+  - id: bigint
+  - unit_detail_id: bigint
+  - tanggal: date
+  - nama: string
+  + isHariLibur()
+}
+
+MODEL(LaukPaukUnit) {
+  - id: bigint
+  - unit_id: bigint
+  - nominal: decimal
+  - penalty: decimal (nullable)
+  + showByAdminUnit()
+}
+
+' ==============================================
+' Relationships
+' ==============================================
+
+' Admin Relationships
+Admin "1" -- "0..*" AdminMonitoringUnit : has
+AdminMonitoringUnit "0..*" -- "1" Unit : monitors
+Admin "0..*" -- "1" Unit : assigned to (admin_unit)
+
+' Unit Relationships
+Unit "1" -- "0..*" UnitDetail : has
+Unit "1" -- "0..*" Shift : has
+Unit "1" -- "0..*" HariLibur : has
+Unit "1" -- "0..*" LaukPaukUnit : has
+Unit "1" -- "0..*" Event : has
+
+' Shift Relationships
+Shift "1" -- "0..*" ShiftDetail : has
+ShiftDetail "1" -- "0..*" MsPegawai : assigned to
+
+' UnitDetail Relationships
+UnitDetail "1" -- "0..*" MsPegawai : has
+UnitDetail "1" -- "0..*" HariLibur : has
+
+' MsPegawai Relationships
+MsPegawai "0..*" -- "1" MsOrang : is
+MsPegawai "1" -- "0..*" Presensi : has
+MsPegawai "1" -- "0..*" PengajuanCuti : makes
+MsPegawai "1" -- "0..*" PengajuanIzin : makes
+MsPegawai "1" -- "0..*" PengajuanSakit : makes
+MsPegawai "0..*" -- "0..*" Event : participates in (via EventsPegawai)
+MsPegawai "1" -- "0..*" PresensiEvent : has
+
+' Presensi Relationships
+Presensi "0..*" -- "1" Shift : uses
+Presensi "0..*" -- "1" ShiftDetail : uses
+
+' Event Relationships
+Event "1" -- "0..*" EventsPegawai : has
+EventsPegawai "0..*" -- "1" MsPegawai : links
+Event "1" -- "0..*" PresensiEvent : has
+
+' Pengajuan Relationships
+PengajuanCuti "0..*" -- "1" Cuti : uses
+PengajuanIzin "0..*" -- "1" Izin : uses
+PengajuanSakit "0..*" -- "1" Sakit : uses
+
+@enduml
