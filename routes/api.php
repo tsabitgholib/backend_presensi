@@ -4,7 +4,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthAdminController;
 use App\Http\Controllers\UnitController;
-use App\Http\Controllers\PresensiLokasiController;
 use App\Http\Controllers\AuthPegawaiController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\UnitDetailController;

@@ -2,103 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Shift;
-use App\Models\ShiftDetail;
+
 use App\Helpers\AdminUnitHelper;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\Request;
+use App\Services\ShiftService;
 
 class ShiftController extends Controller
 {
-    // CRUD Shift
+    public function __construct(
+        protected ShiftService $shiftService
+    ) {}
+
     public function index(Request $request)
     {
-        $admin = $request->get('admin');
-        if ($admin && $admin->role === 'admin_unit') {
-            $unitId = $admin->unit_id;
-            $query = Shift::with(['unit', 'shiftDetail'])
-                ->where('unit_id', $unitId);
-        } else {
-            $query = Shift::with(['unit', 'shiftDetail']);
-        }
-        $data = $query->get()->map(function ($shift) {
-            return [
-                'id' => $shift->id,
-                'name' => $shift->name,
-                'unit_name' => $shift->unit->nama ?? null,
-                'unit_id' => $unitId ?? $shift->unit->id,
-                'created_at' => $shift->created_at,
-                'updated_at' => $shift->updated_at,
-                'shift_detail' => $shift->shiftDetail
-            ];
-        });
-        return response()->json($data);
+        return $this->shiftService->index($request);
     }
 
     public function store(Request $request)
     {
-        $admin = $request->get('admin');
-        if (!$admin) {
-            return response()->json(['message' => 'Admin tidak ditemukan'], 401);
-        }
-
-        // Get validation rules using helper
         $unitValidationRules = AdminUnitHelper::getUnitIdValidationRules($request);
-
-        $request->validate(array_merge([
+        
+                $request->validate(array_merge([
             'name' => 'required',
-        ], $unitValidationRules));
+                ], $unitValidationRules));
 
-        // Get unit_id using helper
-        $unitResult = AdminUnitHelper::getUnitId($request);
-        if ($unitResult['error']) {
-            return response()->json(['message' => $unitResult['error']], 400);
-        }
-        $unitId = $unitResult['unit_id'];
-
-        try {
-            $shift = Shift::create([
-                'name' => $request->name,
-                'unit_id' => $unitId,
-            ]);
-            return response()->json($shift);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
+        return $this->shiftService->store($request);
     }
 
     public function update(Request $request, $id)
     {
-        $shift = Shift::find($id);
-        if (!$shift) {
-            return response()->json(['message' => 'Shift tidak ditemukan'], 404);
-        }
         $request->validate([
             'name' => 'sometimes|required',
-        ]);
-        try {
-            $shift->update($request->only('name'));
-            return response()->json($shift);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
+                ]);
+
+        return $this->shiftService->update($request, $id);
     }
 
     public function destroy($id)
     {
-        $shift = Shift::find($id);
-        if (!$shift) {
-            return response()->json(['message' => 'Shift tidak ditemukan'], 404);
-        }
-        try {
-            $shift->delete();
-            return response()->json(['message' => 'Shift deleted']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
+        return $this->shiftService->destroy($id);
     }
 
-    // CRUD Shift Detail
     public function storeShiftDetail(Request $request)
     {
         $request->validate([
@@ -119,21 +63,13 @@ class ShiftController extends Controller
             'minggu_pulang' => 'nullable',
             'toleransi_terlambat' => 'nullable|integer|min:0',
             'toleransi_pulang' => 'nullable|integer|min:0',
-        ]);
-        try {
-            $shiftDetail = ShiftDetail::create($request->all());
-            return response()->json($shiftDetail);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
+                ]);
+
+        return $this->shiftService->storeShiftDetail($request);
     }
 
     public function updateShiftDetail(Request $request, $id)
     {
-        $shiftDetail = ShiftDetail::find($id);
-        if (!$shiftDetail) {
-            return response()->json(['message' => 'Shift detail tidak ditemukan'], 404);
-        }
         $request->validate([
             'senin_masuk' => 'nullable|date_format:H:i',
             'senin_pulang' => 'nullable|date_format:H:i',
@@ -151,65 +87,34 @@ class ShiftController extends Controller
             'minggu_pulang' => 'nullable',
             'toleransi_terlambat' => 'nullable|integer|min:0',
             'toleransi_pulang' => 'nullable|integer|min:0',
-        ]);
-        try {
-            $shiftDetail->update($request->all());
-            return response()->json($shiftDetail);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
+                ]);
+
+        return $this->shiftService->updateShiftDetail($request, $id);
     }
 
     public function destroyShiftDetail($id)
     {
-        $shiftDetail = ShiftDetail::find($id);
-        if (!$shiftDetail) {
-            return response()->json(['message' => 'Shift detail tidak ditemukan'], 404);
-        }
-        try {
-            $shiftDetail->delete();
-            return response()->json(['message' => 'Shift detail deleted']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
+        return $this->shiftService->destroyShiftDetail($id);
     }
 
     public function getByUnit($unit_id)
     {
-        $shifts = Shift::where('unit_id', $unit_id)->with('shiftDetail')->get();
-        return response()->json($shifts);
+        return $this->shiftService->getByUnit($unit_id);
     }
 
     public function assignPegawaiToShiftDetail(Request $request)
     {
-        try {
-            $request->validate([
+        $request->validate([
                 'shift_detail_id' => 'required|exists:mysql.shift_detail,id',
                 'pegawai_ids' => 'required|array',
                 'pegawai_ids.*' => 'exists:mysql_sdi.ms_orang,id',
             ]);
 
-            $count = \App\Models\Pegawai::whereIn('id_orang', $request->pegawai_ids)
-                ->update(['presensi_shift_detail_id' => $request->shift_detail_id]);
-
-            return response()->json([
-                'message' => 'Berhasil Menambahkan Pegawai ke Shift ini',
-                'jumlah_pegawai_diupdate' => $count
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Error: ' . $e->getMessage(),
-            ], 500);
-        }
+        return $this->shiftService->assignPegawaiToShiftDetail($request);
     }
-
 
     public function getShiftDetailById($id)
     {
-        $shiftDetail = ShiftDetail::with('shift')->find($id);
-        if (!$shiftDetail) {
-            return response()->json(['message' => 'Shift detail tidak ditemukan'], 404);
-        }
-        return response()->json($shiftDetail);
+        return $this->shiftService->getShiftDetailById($id);
     }
 }

@@ -2,67 +2,50 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesSuperAdmin;
 use Illuminate\Http\Request;
-use App\Models\Cuti;
+use App\Services\CutiService;
 
 class CutiController extends Controller
 {
-    private function authorizeSuperAdmin($request) {
-        $admin = $request->get('admin');
-        if (!$admin || $admin->role !== 'super_admin') {
-            abort(403, 'Hanya super admin yang boleh mengakses.');
-        }
-    }
+    use AuthorizesSuperAdmin;
 
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct(
+        protected CutiService $cutiService
+    ) {}
+
     public function index()
     {
-        return response()->json(Cuti::all());
+        return $this->cutiService->index();
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $this->authorizeSuperAdmin($request);
         $request->validate(['jenis' => 'required|string']);
-        $cuti = Cuti::create(['jenis' => $request->jenis]);
-        return response()->json($cuti);
+
+        return $this->cutiService->store($request);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Request $request, $id)
     {
         $this->authorizeSuperAdmin($request);
-        $cuti = Cuti::findOrFail($id);
-        return response()->json($cuti);
+
+        return $this->cutiService->show($request, $id);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
         $this->authorizeSuperAdmin($request);
         $request->validate(['jenis' => 'required|string']);
-        $cuti = Cuti::findOrFail($id);
-        $cuti->update(['jenis' => $request->jenis]);
-        return response()->json($cuti);
+
+        return $this->cutiService->update($request, $id);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Request $request, $id)
     {
         $this->authorizeSuperAdmin($request);
-        $cuti = Cuti::findOrFail($id);
-        $cuti->delete();
-        return response()->json(['message' => 'Cuti deleted']);
+
+        return $this->cutiService->destroy($request, $id);
     }
 }

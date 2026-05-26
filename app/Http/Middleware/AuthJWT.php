@@ -8,7 +8,6 @@ use App\Helpers\JWT;
 use App\Models\Admin;
 use App\Models\MsOrang;
 use App\Models\Pegawai;
-use App\Models\Pegawai;
 
 class AuthJWT
 {
