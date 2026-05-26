@@ -2,22 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Shift extends Model
 {
-    protected $connection = 'mysql';
+    use HasFactory;
 
-    protected $table = 'sdi_presensi.shift';
-    protected $fillable = ['name', 'unit_id'];
+    protected $table = 'shift';
+
+    protected $fillable = [
+        'name',
+        'unit_id'
+    ];
 
     public function unit()
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
-    public function shiftDetail()
+    public function details()
     {
-        return $this->hasOne(ShiftDetail::class);
+        return $this->hasMany(ShiftDetail::class, 'shift_id');
     }
 }

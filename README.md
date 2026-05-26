@@ -241,7 +241,7 @@ Endpoint khusus untuk Android/iOS mendapatkan informasi lokasi presensi yang val
 Middleware sekarang memuat relasi yang diperlukan saat autentikasi:
 
 ```php
-$pegawai = MsPegawai::with(['shiftDetail.shift', 'unitDetailPresensi'])->find($payload->sub);
+$pegawai = Pegawai::with(['shiftDetail.shift', 'unitDetailPresensi'])->find($payload->sub);
 ```
 
 #### 4. Perbaikan PresensiController
@@ -341,7 +341,7 @@ const presensi = await presensiResponse.json();
 -   **Unit** memiliki banyak **UnitDetail**
 -   **UnitDetail** memiliki lokasi polygon masing-masing
 -   **Shift** berlaku untuk semua **UnitDetail** dalam satu **Unit**
--   **MsPegawai** memiliki relasi ke **ShiftDetail** dan **UnitDetail** (untuk presensi)
+-   **Pegawai** memiliki relasi ke **ShiftDetail** dan **UnitDetail** (untuk presensi)
 -   **Presensi** menggunakan **shift_id** dan **shift_detail_id** dari pegawai
 
 ### Validasi Lokasi

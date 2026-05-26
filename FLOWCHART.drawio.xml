@@ -94,7 +94,7 @@
           <mxGeometry x="100" y="710" width="150" height="50" as="geometry" />
         </mxCell>
         
-        <mxCell id="manajemen-pegawai" value="Pegawai (MsPegawai)\nPegawaiController" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="manajemen-pegawai" value="Pegawai (Pegawai)\nPegawaiController" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="280" y="710" width="150" height="50" as="geometry" />
         </mxCell>
         
@@ -269,7 +269,7 @@
           <mxGeometry x="1010" y="1710" width="150" height="50" as="geometry" />
         </mxCell>
         
-        <mxCell id="tech-models" value="Models (22)\nAdmin, Unit, MsPegawai,\nPresensi, PengajuanCuti, dll" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1bee7;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="tech-models" value="Models (22)\nAdmin, Unit, Pegawai,\nPresensi, PengajuanCuti, dll" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1bee7;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1210" y="1710" width="180" height="50" as="geometry" />
         </mxCell>
         

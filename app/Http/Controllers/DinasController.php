@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Presensi;
-use App\Models\MsPegawai;
+use App\Models\Pegawai;
 use App\Models\ShiftDetail;
 use App\Models\PresensiJadwalDinas;
 use Carbon\Carbon;
@@ -45,7 +45,7 @@ class DinasController extends Controller
         $unitId = $unitResult['unit_id'];
 
         // Validasi bahwa semua pegawai milik unit admin
-        $pegawais = MsPegawai::whereIn('id', $request->pegawai_ids)
+        $pegawais = Pegawai::whereIn('id', $request->pegawai_ids)
             ->whereHas('unitDetailPresensi', function ($q) use ($unitId) {
                 $q->where('presensi_ms_unit_detail_id', $unitId);
             })
@@ -168,7 +168,7 @@ class DinasController extends Controller
         $pegawai_id = $request->query('pegawai_id');
 
         // Ambil semua pegawai di unit admin
-        $pegawais = MsPegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
+        $pegawais = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
             $q->where('presensi_ms_unit_detail_id', $unitId);
         })
             ->with('orang:id,no_ktp,nama')
@@ -200,7 +200,7 @@ class DinasController extends Controller
         }
         $pegawaiIds = $pegawaiIds->unique();
 
-        $pegawais = MsPegawai::whereIn('id_orang', $pegawaiIds)
+        $pegawais = Pegawai::whereIn('id_orang', $pegawaiIds)
             ->with(['orang'])
             ->get()
             ->keyBy('id_orang');
@@ -267,7 +267,7 @@ class DinasController extends Controller
         $unitId = $unitResult['unit_id'];
 
         // Validasi bahwa semua pegawai milik unit admin
-        $pegawais = MsPegawai::whereIn('id', $request->pegawai_ids)
+        $pegawais = Pegawai::whereIn('id', $request->pegawai_ids)
             ->whereHas('unitDetailPresensi', function ($q) use ($unitId) {
                 $q->where('presensi_ms_unit_detail_id', $unitId);
             })
@@ -383,7 +383,7 @@ class DinasController extends Controller
         $pegawai_id = $request->query('pegawai_id');
 
         // Ambil semua pegawai di unit admin
-        $pegawaiQuery = MsPegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
+        $pegawaiQuery = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
             $q->where('ms_unit_id', $unitId);
         });
 

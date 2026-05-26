@@ -9,7 +9,12 @@ class Cuti extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql';
-    protected $table = 'sdi_presensi.cuti';
+    protected $table = 'cuti';
+
     protected $fillable = ['jenis'];
+
+    public function pengajuan()
+    {
+        return $this->hasMany(PengajuanCuti::class, 'cuti_id');
+    }
 }

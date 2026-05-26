@@ -69,7 +69,7 @@ class PengajuanCutiController extends Controller
 
         $admin = $request->get('admin');
         $unitId = $admin->unit_id;
-        // $isPegawaiInUnit = \App\Models\MsPegawai::where('id', $pengajuan->pegawai_id)
+        // $isPegawaiInUnit = \App\Models\Pegawai::where('id', $pengajuan->pegawai_id)
         //     ->whereHas('unitDetail', function($q) use ($unitId) {
         //         $q->where('unit_id', $unitId);
         //     })->exists();

@@ -70,7 +70,7 @@ MODEL(MsOrang) {
   - nama: string
 }
 
-MODEL(MsPegawai) {
+MODEL(Pegawai) {
   - id: bigint
   - id_orang: bigint
   - presensi_ms_unit_detail_id: bigint
@@ -228,20 +228,20 @@ Unit "1" -- "0..*" Event : has
 
 ' Shift Relationships
 Shift "1" -- "0..*" ShiftDetail : has
-ShiftDetail "1" -- "0..*" MsPegawai : assigned to
+ShiftDetail "1" -- "0..*" Pegawai : assigned to
 
 ' UnitDetail Relationships
-UnitDetail "1" -- "0..*" MsPegawai : has
+UnitDetail "1" -- "0..*" Pegawai : has
 UnitDetail "1" -- "0..*" HariLibur : has
 
-' MsPegawai Relationships
-MsPegawai "0..*" -- "1" MsOrang : is
-MsPegawai "1" -- "0..*" Presensi : has
-MsPegawai "1" -- "0..*" PengajuanCuti : makes
-MsPegawai "1" -- "0..*" PengajuanIzin : makes
-MsPegawai "1" -- "0..*" PengajuanSakit : makes
-MsPegawai "0..*" -- "0..*" Event : participates in (via EventsPegawai)
-MsPegawai "1" -- "0..*" PresensiEvent : has
+' Pegawai Relationships
+Pegawai "0..*" -- "1" MsOrang : is
+Pegawai "1" -- "0..*" Presensi : has
+Pegawai "1" -- "0..*" PengajuanCuti : makes
+Pegawai "1" -- "0..*" PengajuanIzin : makes
+Pegawai "1" -- "0..*" PengajuanSakit : makes
+Pegawai "0..*" -- "0..*" Event : participates in (via EventsPegawai)
+Pegawai "1" -- "0..*" PresensiEvent : has
 
 ' Presensi Relationships
 Presensi "0..*" -- "1" Shift : uses
@@ -249,7 +249,7 @@ Presensi "0..*" -- "1" ShiftDetail : uses
 
 ' Event Relationships
 Event "1" -- "0..*" EventsPegawai : has
-EventsPegawai "0..*" -- "1" MsPegawai : links
+EventsPegawai "0..*" -- "1" Pegawai : links
 Event "1" -- "0..*" PresensiEvent : has
 
 ' Pengajuan Relationships

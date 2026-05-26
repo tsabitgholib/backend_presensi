@@ -5,24 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class EventsPegawai extends Model
+class UserDevice extends Model
 {
     use HasFactory;
 
-    protected $table = 'events_pegawai';
+    protected $table = 'user_device';
 
     protected $fillable = [
         'pegawai_id',
-        'events_id'
+        'unique_device_id'
     ];
 
     public function pegawai()
     {
         return $this->belongsTo(Pegawai::class, 'pegawai_id');
-    }
-
-    public function event()
-    {
-        return $this->belongsTo(Event::class, 'events_id');
     }
 }

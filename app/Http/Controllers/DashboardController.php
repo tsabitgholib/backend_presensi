@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Presensi;
-use App\Models\MsPegawai;
+use App\Models\Pegawai;
 use App\Models\Unit;
 use App\Models\UnitDetail;
 use App\Models\PengajuanCuti;
@@ -234,7 +234,7 @@ class DashboardController extends Controller
     $today = now('Asia/Jakarta')->startOfDay();
     
     // Ambil unit_id dari pegawai pertama untuk cek hari libur
-    $firstPegawai = \App\Models\MsPegawai::whereHas('orang', function($q) use ($noKtps) {
+    $firstPegawai = \App\Models\Pegawai::whereHas('orang', function($q) use ($noKtps) {
         $q->whereIn('no_ktp', $noKtps);
     })->with('unitDetailPresensi.unit')->first();
     
@@ -456,7 +456,7 @@ class DashboardController extends Controller
      */
     private function getTopEmployees($noKtps, $startDate, $endDate)
     {
-        $pegawais = MsPegawai::with('orang:id,no_ktp,nama')
+        $pegawais = Pegawai::with('orang:id,no_ktp,nama')
             ->whereHas('orang', function ($q) use ($noKtps) {
                 $q->whereIn('no_ktp', $noKtps);
             })
@@ -529,7 +529,7 @@ class DashboardController extends Controller
 //         ->get();
 
 //     // Ambil data pegawai
-//     $pegawaiMap = MsPegawai::whereIn('no_ktp', $stats->pluck('no_ktp'))
+//     $pegawaiMap = Pegawai::whereIn('no_ktp', $stats->pluck('no_ktp'))
 //         ->pluck('nama', 'no_ktp');
 
 //     // Gabung data presensi dengan nama pegawai + attendance rate
@@ -724,7 +724,7 @@ class DashboardController extends Controller
                 return $unitDetail->pegawaisPresensi->pluck('id');
             });
 
-            $pegawais = MsPegawai::with('orang')
+            $pegawais = Pegawai::with('orang')
                 ->whereIn('id', $pegawaiIds)
                 ->get();
 
@@ -772,7 +772,7 @@ class DashboardController extends Controller
                 return $unitDetail->pegawaisPresensi->pluck('id');
             });
 
-            $pegawais = MsPegawai::with('orang')
+            $pegawais = Pegawai::with('orang')
                 ->whereIn('id', $pegawaiIds)
                 ->get();
 

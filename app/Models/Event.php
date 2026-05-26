@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Event extends Model
 {
-    protected $connection = 'mysql';
+    use HasFactory;
 
-    protected $table = 'sdi_presensi.events';
+    protected $table = 'events';
 
     protected $fillable = [
         'ms_unit_id',
@@ -19,16 +20,23 @@ class Event extends Model
         'tanggal_selesai',
         'waktu_mulai',
         'waktu_selesai',
+        'nama_tempat',
+        'lokasi',
+        'is_active',
         'waktu_masuk_mulai',
         'waktu_masuk_selesai',
         'waktu_pulang_mulai',
         'waktu_pulang_selesai',
-        // 'hari_mingguan',
-        'nama_tempat',
-        'lokasi',
+        'hari_mingguan',
         'lokasi2',
-        'lokasi3',
-        'is_active',
+        'lokasi3'
+    ];
+
+    protected $casts = [
+        'lokasi' => 'array',
+        'lokasi2' => 'array',
+        'lokasi3' => 'array',
+        'is_active' => 'boolean',
     ];
 
     public function unit()
@@ -36,16 +44,13 @@ class Event extends Model
         return $this->belongsTo(Unit::class, 'ms_unit_id');
     }
 
-    public function pegawai()
+    public function pegawais()
     {
-        return $this->belongsToMany(
-            MsPegawai::class,
-            'event_pegawai',
-            'event_id',
-            'pegawai_id'
-        )->withTimestamps();
+        return $this->belongsToMany(Pegawai::class, 'events_pegawai', 'events_id', 'pegawai_id');
     }
 
+    public function presensi()
+    {
+        return $this->hasMany(PresensiEvent::class, 'events_id');
+    }
 }
-
-

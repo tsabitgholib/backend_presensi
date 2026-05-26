@@ -9,8 +9,12 @@ class Sakit extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql';
-    protected $table = 'sdi_presensi.sakit';
+    protected $table = 'sakit';
 
     protected $fillable = ['jenis'];
+
+    public function pengajuan()
+    {
+        return $this->hasMany(PengajuanSakit::class, 'sakit_id');
+    }
 }

@@ -52,11 +52,11 @@ class MsOrang extends Model
     {
         return $this->hasOneThrough(
             \App\Models\ShiftDetail::class, // target akhir
-            \App\Models\MsPegawai::class,   // tabel perantara
-            'id_orang',                     // FK di MsPegawai -> ms_orang.id
+            \App\Models\Pegawai::class,   // tabel perantara
+            'id_orang',                     // FK di Pegawai -> ms_orang.id
             'id',                           // PK di ShiftDetail
             'id',                           // PK di MsOrang
-            'presensi_shift_detail_id'      // FK di MsPegawai -> shift_detail.id
+            'presensi_shift_detail_id'      // FK di Pegawai -> shift_detail.id
         );
     }
 
@@ -69,7 +69,7 @@ class MsOrang extends Model
     {
         return $this->hasOneThrough(
             \App\Models\UnitDetail::class,
-            \App\Models\MsPegawai::class,
+            \App\Models\Pegawai::class,
             'id_orang',                     // FK di ms_pegawai -> ms_orang.id
             'id',                           // PK di unit_detail
             'id',                           // PK di ms_orang
@@ -84,6 +84,6 @@ class MsOrang extends Model
     
     public function pegawai()
     {
-        return $this->hasOne(MsPegawai::class, 'id_orang');
+        return $this->hasOne(Pegawai::class, 'id_orang');
     }
 }

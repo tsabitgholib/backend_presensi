@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class LaukPaukUnit extends Model
 {
-    protected $connection = 'mysql';
-    protected $table = 'sdi_presensi.lauk_pauk_unit';
+    use HasFactory;
+
+    protected $table = 'lauk_pauk_unit';
+
     protected $fillable = [
-        'unit_id', 
+        'unit_id',
         'nominal',
         'pot_izin_pribadi',
         'pot_tanpa_izin',
@@ -22,11 +25,11 @@ class LaukPaukUnit extends Model
         'nom_lembur_permenit',
         'nom_lembur_permenit_weekend',
         'pot_tidak_absen_masuk',
-        'pot_tidak_absen_pulang',
+        'pot_tidak_absen_pulang'
     ];
 
     public function unit()
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 }

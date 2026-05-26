@@ -1,24 +1,40 @@
 <?php
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PengajuanIzin extends Model
 {
+    use HasFactory;
 
-    protected $connection = 'mysql';
-    protected $table = 'sdi_presensi.pengajuan_izin';
+    protected $table = 'pengajuan_izin';
+
     protected $fillable = [
-        'pegawai_id', 'izin_id', 'tanggal_mulai', 'tanggal_selesai', 'alasan', 'dokumen', 'status', 'admin_unit_id', 'keterangan_admin'
+        'pegawai_id',
+        'izin_id',
+        'admin_unit_id',
+        'tanggal_mulai',
+        'tanggal_selesai',
+        'alasan',
+        'dokumen',
+        'status',
+        'keterangan_admin'
     ];
 
-    public function pegawai() {
-        return $this->belongsTo(MsPegawai::class, 'pegawai_id');
+    public function pegawai()
+    {
+        return $this->belongsTo(Pegawai::class, 'pegawai_id');
     }
-    public function jenis() {
+
+    public function izin()
+    {
         return $this->belongsTo(Izin::class, 'izin_id');
     }
-    public function adminUnit() {
+
+    public function admin()
+    {
         return $this->belongsTo(Admin::class, 'admin_unit_id');
     }
-} 
+}

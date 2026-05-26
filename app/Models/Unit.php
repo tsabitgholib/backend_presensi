@@ -4,94 +4,56 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Admin;
-use App\Models\UnitDetail;
-use App\Models\Shift;
 
 class Unit extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql_sdi';
-    protected $table = 'sdi.ms_unit';
+    protected $table = 'unit';
 
     protected $fillable = [
-        'id_sync',
-        'kode_surat',
-        'id_parent',
-        'id_jabatan_pimpinan',
-        'nama',
+        'nama_unit',
         'alias',
+        'parent_id',
         'level',
-        'lvl_surat',
-        'lvl',
-        'presensi_ms_unit_detail_id'
+        'lokasi',
+        'lokasi2',
+        'lokasi3'
     ];
 
-    /**
-     * Relasi ke parent unit
-     */
+    protected $casts = [
+        'lokasi' => 'array',
+        'lokasi2' => 'array',
+        'lokasi3' => 'array',
+    ];
+
     public function parent()
     {
-        return $this->belongsTo(Unit::class, 'id_parent');
+        return $this->belongsTo(Unit::class, 'parent_id');
     }
 
-    /**
-     * Relasi ke children unit
-     */
     public function children()
     {
-        return $this->hasMany(Unit::class, 'id_parent');
-    }
-
-    /**
-     * Ambil semua children secara rekursif
-     */
-    public function childrenRecursive()
-    {
-        return $this->children()->with('childrenRecursive');
-    }
-    
-
-    public function childrenRecursive2()
-    {
-        return $this->hasMany(Unit::class, 'id_parent')
-            ->orderBy('level', 'desc')   // penting!
-            ->with('childrenRecursive2');
-    }
-
-
-
-    /**
-     * Scope untuk ambil hanya root unit (tanpa parent)
-     */
-    public function scopeRoot($query)
-    {
-        return $query->whereNull('id_parent');
+        return $this->hasMany(Unit::class, 'parent_id');
     }
 
     public function admins()
     {
-        return $this->hasMany(Admin::class);
+        return $this->hasMany(Admin::class, 'unit_id');
     }
 
     public function unitDetails()
     {
-        return $this->hasMany(UnitDetail::class, 'ms_unit_id', 'id');
+        return $this->hasMany(UnitDetail::class, 'ms_unit_id');
     }
-
 
     public function shifts()
     {
-        return $this->hasMany(Shift::class);
+        return $this->hasMany(Shift::class, 'unit_id');
     }
 
-    public function getRootParentId()
+    public function laukPauk()
     {
-        $unit = $this;
-        while ($unit->parent) {
-            $unit = $unit->parent;
-        }
-        return $unit->id;
+        return $this->hasOne(LaukPaukUnit::class, 'unit_id');
     }
 }

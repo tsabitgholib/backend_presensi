@@ -24,7 +24,7 @@ Aplikasi memiliki 3 jenis role admin:
 - `AdminController`: Mengelola CRUD admin dan monitoring units
 
 ### 3. Manajemen Data
-- **Unit & Pegawai**: Mengelola struktur organisasi (`Unit`, `UnitDetail`) dan data pegawai (`MsPegawai`, `MsOrang`). Mendukung kepala unit (kepala unit) dengan fitur khusus.
+- **Unit & Pegawai**: Mengelola struktur organisasi (`Unit`, `UnitDetail`) dan data pegawai (`Pegawai`, `MsOrang`). Mendukung kepala unit (kepala unit) dengan fitur khusus.
 - **Shift**: Mengatur jadwal kerja (`Shift`, `ShiftDetail`) yang dikaitkan dengan unit dan pegawai.
 - **Pengajuan**: Mengelola izin, cuti, dan sakit melalui alur pengajuan yang perlu disetujui (`approve`) oleh admin. Pegawai dapat melihat riwayat pengajuan mereka.
 

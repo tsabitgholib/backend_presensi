@@ -189,7 +189,7 @@ class ShiftController extends Controller
                 'pegawai_ids.*' => 'exists:mysql_sdi.ms_orang,id',
             ]);
 
-            $count = \App\Models\MsPegawai::whereIn('id_orang', $request->pegawai_ids)
+            $count = \App\Models\Pegawai::whereIn('id_orang', $request->pegawai_ids)
                 ->update(['presensi_shift_detail_id' => $request->shift_detail_id]);
 
             return response()->json([

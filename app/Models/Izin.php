@@ -9,7 +9,12 @@ class Izin extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql';
-    protected $table = 'sdi_presensi.izin';
+    protected $table = 'izin';
+
     protected $fillable = ['jenis'];
+
+    public function pengajuan()
+    {
+        return $this->hasMany(PengajuanIzin::class, 'izin_id');
+    }
 }

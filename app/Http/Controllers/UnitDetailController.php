@@ -153,7 +153,7 @@ class UnitDetailController extends Controller
         // }
 
         // Update pegawai
-        $count = \App\Models\MsPegawai::whereIn('id_orang', $request->pegawai_ids)
+        $count = \App\Models\Pegawai::whereIn('id_orang', $request->pegawai_ids)
             ->update(['presensi_ms_unit_detail_id' => $request->unit_detail_id]);
 
         return response()->json([

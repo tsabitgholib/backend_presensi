@@ -33,7 +33,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Presensi;
-use App\Models\MsPegawai;
+use App\Models\Pegawai;
 use App\Models\Shift;
 use App\Models\ShiftDetail;
 use App\Models\UnitDetail;
@@ -547,7 +547,7 @@ class PresensiController extends Controller
         $unitId = $unitResult['unit_id'];
 
         $tanggal = $request->query('tanggal', now('Asia/Jakarta')->toDateString());
-        $pegawais = MsPegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
+        $pegawais = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
             $q->where('id_unit', $unitId);
         })->with('orang')->get();
 
@@ -845,7 +845,7 @@ class PresensiController extends Controller
         $pegawaiId = $request->query('pegawai_id');
 
         if ($pegawaiId) {
-            $pegawai = \App\Models\MsPegawai::with(['unitDetailPresensi.unit'])
+            $pegawai = \App\Models\Pegawai::with(['unitDetailPresensi.unit'])
                 ->find($pegawaiId);
 
             if (!$pegawai) {
@@ -1564,7 +1564,7 @@ class PresensiController extends Controller
         $from = $request->query('from');
         $to = $request->query('to');
 
-        // $pegawaiQuery = \App\Models\MsPegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId, $unit_detail_id) {
+        // $pegawaiQuery = \App\Models\Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId, $unit_detail_id) {
         //     $q->where('ms_unit_id', $unitId);
         //     if ($unit_detail_id) {
         //         $q->where('id', $unit_detail_id);
@@ -1672,7 +1672,7 @@ class PresensiController extends Controller
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
             return response()->json(['message' => 'Format tanggal tidak valid. Gunakan format YYYY-MM-DD'], 422);
         }
-        $pegawai = MsPegawai::with('orang')->where('id_orang', $pegawai_id)->firstOrFail();
+        $pegawai = Pegawai::with('orang')->where('id_orang', $pegawai_id)->firstOrFail();
 
 
         $unitResult = AdminUnitHelper::getUnitId($request);
@@ -1799,7 +1799,7 @@ class PresensiController extends Controller
         ];
         for ($bulan = 1; $bulan <= $bulanSekarang; $bulan++) {
             // Ambil semua pegawai di unit admin
-            $pegawais = \App\Models\MsPegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
+            $pegawais = \App\Models\Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
                 $q->where('ms_unit_id', $unitId);
             })
                 ->whereHas('orang')
@@ -1895,7 +1895,7 @@ class PresensiController extends Controller
         $tahun = $request->query('tahun', now('Asia/Jakarta')->year);
         $bulanSekarang = now('Asia/Jakarta')->month;
 
-        $pegawai = \App\Models\MsPegawai::with('orang')->where('id_orang', $pegawai_id)->first();
+        $pegawai = \App\Models\Pegawai::with('orang')->where('id_orang', $pegawai_id)->first();
         if (!$pegawai) {
             return response()->json(['message' => 'Pegawai tidak ditemukan'], 404);
         }
@@ -2522,7 +2522,7 @@ class PresensiController extends Controller
      */
     public function integratePengajuanToPresensi($pegawai_id, $jenis_pengajuan, $tanggal_mulai, $tanggal_selesai, $keterangan = null)
     {
-        $pegawai = \App\Models\MsPegawai::with(['orang', 'shiftDetail'])->find($pegawai_id);
+        $pegawai = \App\Models\Pegawai::with(['orang', 'shiftDetail'])->find($pegawai_id);
         if (!$pegawai) {
             return false;
         }
@@ -2606,7 +2606,7 @@ class PresensiController extends Controller
      */
     public function removePengajuanFromPresensi($pegawai_id, $jenis_pengajuan, $tanggal_mulai, $tanggal_selesai)
     {
-        $pegawai = \App\Models\MsPegawai::find($pegawai_id);
+        $pegawai = \App\Models\Pegawai::find($pegawai_id);
         if (!$pegawai) {
             return false;
         }
@@ -2634,7 +2634,7 @@ class PresensiController extends Controller
     {
         Carbon::setLocale('id');
         $idRealPegawai = DB::connection('mysql_sdi')->table('sdi.v_pegawai')->where('id_orang', $pegawai_id)->value('id');
-        $pegawai = MsPegawai::with('orang')->where('id', $idRealPegawai)->firstOrFail();
+        $pegawai = Pegawai::with('orang')->where('id', $idRealPegawai)->firstOrFail();
 
 
         $noKtp   = $pegawai->orang->no_ktp;
@@ -2784,7 +2784,7 @@ class PresensiController extends Controller
         $bulan = $request->query('bulan');
         $tahun = $request->query('tahun');
 
-        $pegawais = MsPegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
+        $pegawais = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
             $q->where('id_unit', $unitId);
         })
             ->whereHas('orang.presensi', function ($q) use ($bulan, $tahun) {
@@ -2885,7 +2885,7 @@ class PresensiController extends Controller
             'pegawai_ids.*' => 'exists:mysql_sdi.ms_pegawai,id',
         ]);
 
-        $pegawais = MsPegawai::with('shiftDetail', 'orang')
+        $pegawais = Pegawai::with('shiftDetail', 'orang')
             ->whereIn('id_orang', $request->pegawai_ids)
             ->get();
 
@@ -3095,7 +3095,7 @@ class PresensiController extends Controller
 
         $tanggal = $request->query('tanggal', Carbon::today()->toDateString());
 
-        $pegawais = MsPegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
+        $pegawais = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
             $q->where('id_unit', $unitId);
         })
             ->with('orang:id,no_ktp,nama')
@@ -3171,7 +3171,7 @@ class PresensiController extends Controller
         $tanggal = $request->query('tanggal'); // format YYYY-MM-DD
         $bulan   = $request->query('bulan');   // format YYYY-MM
 
-        $pegawais = \App\Models\MsPegawai::where('id_unit', $unitId)
+        $pegawais = \App\Models\Pegawai::where('id_unit', $unitId)
             ->whereNotNull('id_orang')
             ->whereHas('orang')
             ->with('orang:id,no_ktp,nama')
@@ -3411,7 +3411,7 @@ class PresensiController extends Controller
 
         $no_ktps = $presensis->pluck('no_ktp')->unique();
 
-        $pegawais = MsPegawai::whereIn('id_orang', function ($q) use ($no_ktps) {
+        $pegawais = Pegawai::whereIn('id_orang', function ($q) use ($no_ktps) {
             $q->select('id')
                 ->from('ms_orang')
                 ->whereIn('no_ktp', $no_ktps);
@@ -3468,7 +3468,7 @@ class PresensiController extends Controller
 
         $no_ktps = $presensis->pluck('no_ktp')->unique();
 
-        $pegawais = MsPegawai::whereIn('id_orang', function ($q) use ($no_ktps) {
+        $pegawais = Pegawai::whereIn('id_orang', function ($q) use ($no_ktps) {
             $q->select('id')
                 ->from('ms_orang')
                 ->whereIn('no_ktp', $no_ktps);

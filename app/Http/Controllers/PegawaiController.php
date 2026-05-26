@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\MsPegawai;
+use App\Models\Pegawai;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\AdminUnitHelper;
@@ -83,7 +83,7 @@ class PegawaiController extends Controller
     //         'unit_detail_id_presensi' => 'required|exists:unit_detail,id',
     //     ]);
     //     try {
-    //         $pegawai = MsPegawai::create([
+    //         $pegawai = Pegawai::create([
     //             'no_ktp' => $request->no_ktp,
     //             'nama' => $request->nama,
     //             'email' => $request->email,
@@ -98,7 +98,7 @@ class PegawaiController extends Controller
 
     // public function update(Request $request, $id)
     // {
-    //     $pegawai = MsPegawai::find($id);
+    //     $pegawai = Pegawai::find($id);
     //     if (!$pegawai) {
     //         return response()->json(['message' => 'Pegawai tidak ditemukan'], 404);
     //     }
@@ -123,7 +123,7 @@ class PegawaiController extends Controller
 
     // public function destroy($id)
     // {
-    //     $pegawai = MsPegawai::find($id);
+    //     $pegawai = Pegawai::find($id);
     //     if (!$pegawai) {
     //         return response()->json(['message' => 'Pegawai tidak ditemukan'], 404);
     //     }
