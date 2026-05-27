@@ -10,7 +10,6 @@ use Illuminate\Validation\Rule;
 
 class ShiftService
 {
-    // CRUD Shift
     public function index(Request $request)
     {
         $admin = $request->get('admin');
@@ -25,7 +24,7 @@ class ShiftService
         $data = $query->get()->map(function ($shift) use ($unitId) {
             return [
                 'id' => $shift->id,
-                'name' => $shift->name,
+                'nama' => $shift->nama,
                 'unit_name' => $shift->unit->nama ?? null,
                 'unit_id' => $unitId ?? $shift->unit->id,
                 'created_at' => $shift->created_at,
@@ -43,10 +42,6 @@ class ShiftService
             return response()->json(['message' => 'Admin tidak ditemukan'], 401);
         }
 
-        // Get validation rules using helper
-        
-
-        // Get unit_id using helper
         $unitResult = AdminUnitHelper::getUnitId($request);
         if ($unitResult['error']) {
             return response()->json(['message' => $unitResult['error']], 400);
@@ -55,7 +50,7 @@ class ShiftService
 
         try {
             $shift = Shift::create([
-                'name' => $request->name,
+                'nama' => $request->nama,
                 'unit_id' => $unitId,
             ]);
             return response()->json($shift);
@@ -72,7 +67,7 @@ class ShiftService
         }
         
         try {
-            $shift->update($request->only('name'));
+            $shift->update($request->only('nama'));
             return response()->json($shift);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 400);
@@ -93,10 +88,8 @@ class ShiftService
         }
     }
 
-    // CRUD Shift Detail
     public function storeShiftDetail(Request $request)
     {
-        
         try {
             $shiftDetail = ShiftDetail::create($request->all());
             return response()->json($shiftDetail);
@@ -140,13 +133,11 @@ class ShiftService
         return response()->json($shifts);
     }
 
-    public function assignPegawaiToShiftDetail(Request $request)
+    public function assignPegawaiToShift(Request $request)
     {
         try {
-            
-
-            $count = \App\Models\Pegawai::whereIn('id_orang', $request->pegawai_ids)
-                ->update(['presensi_shift_detail_id' => $request->shift_detail_id]);
+            $count = \App\Models\Pegawai::whereIn('id', $request->pegawai_ids)
+                ->update(['shift_id' => $request->shift_id]);
 
             return response()->json([
                 'message' => 'Berhasil Menambahkan Pegawai ke Shift ini',
@@ -158,7 +149,6 @@ class ShiftService
             ], 500);
         }
     }
-
 
     public function getShiftDetailById($id)
     {

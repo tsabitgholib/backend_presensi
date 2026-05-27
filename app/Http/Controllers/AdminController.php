@@ -28,7 +28,7 @@ class AdminController extends Controller
             'email' => 'required|email|unique:admin,email',
             'password' => 'required|min:6',
             'role' => 'required|in:super_admin,admin_unit',
-            'unit_id' => 'nullable|exists:mysql_sdi.ms_unit,id',
+            'unit_id' => 'nullable|exists:unit,id',
             'status' => 'required|in:aktif,nonaktif',
                 ]);
 

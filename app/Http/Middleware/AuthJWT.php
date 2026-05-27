@@ -6,7 +6,6 @@ use Closure;
 use Illuminate\Http\Request;
 use App\Helpers\JWT;
 use App\Models\Admin;
-use App\Models\MsOrang;
 use App\Models\Pegawai;
 
 class AuthJWT
@@ -33,7 +32,7 @@ class AuthJWT
                 }
                 $request->attributes->set('admin', $admin);
             } elseif (isset($payload->role) && $payload->role === 'pegawai') {
-                $pegawai = MsOrang::with(['pegawai.shiftDetail.shift', 'pegawai.unitDetailPresensi'])->find($payload->sub);
+                $pegawai = Pegawai::with(['shift.details', 'unit'])->find($payload->sub);
 
                 if (!$pegawai) {
                     return response()->json(['message' => 'Pegawai tidak ditemukan'], 401);

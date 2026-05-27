@@ -6,7 +6,6 @@ use App\Http\Controllers\AuthAdminController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\AuthPegawaiController;
 use App\Http\Controllers\ShiftController;
-use App\Http\Controllers\UnitDetailController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\PresensiController;
@@ -61,12 +60,7 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::get('unit/get-upk/{unit_id}', [UnitController::class, 'getUPK']);
     Route::get('unit/with-location', [UnitController::class, 'getUnitsWithLocation']);
 
-    // Unit Detail
-    //Route::get('unit-detail', [UnitDetailController::class, 'getAll']);
-    Route::get('unit-detail/get-by-unit-id/{unit_id}', [UnitDetailController::class, 'index']);
-    //Route::get('unit-detail/get-by-id/{id}', [UnitDetailController::class, 'show']);
-    Route::put('unit-detail/update-location/{unit_id}', [UnitDetailController::class, 'updateLocation']);
-    Route::post('unit-detail/add-pegawai-to-unit-detail', [UnitDetailController::class, 'assignPegawai']);
+    // Unit Detail (dihapus, menggunakan Unit saja)
 
     // Pegawai
     Route::get('pegawai', [PegawaiController::class, 'index']);
@@ -90,7 +84,7 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::put('shift-detail/update/{id}', [ShiftController::class, 'updateShiftDetail']);
     Route::delete('shift-detail/delete/{id}', [ShiftController::class, 'destroyShiftDetail']);
     Route::get('shift-detail/unit/{unit_id}', [ShiftController::class, 'getByUnit']);
-    Route::post('shift-detail/add-pegawai-to-shift-detail', [ShiftController::class, 'assignPegawaiToShiftDetail']);
+    Route::post('shift-detail/add-pegawai-to-shift', [ShiftController::class, 'assignPegawaiToShift']);
     Route::get('shift-detail/get-by-id/{id}', [ShiftController::class, 'getShiftDetailById']);
 
     // Presensi

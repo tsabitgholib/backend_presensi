@@ -12,14 +12,12 @@ class Pegawai extends Model
     protected $table = 'pegawai';
 
     protected $fillable = [
-        'id_orang',
-        'id_user',
         'nama',
         'no_ktp',
         'nip_unit',
         'unit_id',
-        'presensi_shift_detail_id',
-        'presensi_ms_unit_detail_id',
+        'shift_id',
+        'profesi',
         'status'
     ];
 
@@ -28,19 +26,21 @@ class Pegawai extends Model
         return $this->belongsTo(Unit::class, 'unit_id');
     }
 
-    public function orang()
+    public function shift()
     {
-        return $this->belongsTo(MsOrang::class, 'id_orang');
+        return $this->belongsTo(Shift::class, 'shift_id');
     }
 
-    public function shiftDetail()
+    public function shiftDetails()
     {
-        return $this->belongsTo(ShiftDetail::class, 'presensi_shift_detail_id');
-    }
-
-    public function unitDetail()
-    {
-        return $this->belongsTo(UnitDetail::class, 'presensi_ms_unit_detail_id');
+        return $this->hasManyThrough(
+            ShiftDetail::class,
+            Shift::class,
+            'id',
+            'shift_id',
+            'shift_id',
+            'id'
+        );
     }
 
     public function events()

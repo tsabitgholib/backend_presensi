@@ -35,4 +35,24 @@ class PegawaiController extends Controller
     {
         return $this->pegawaiService->getByKepalaUnit($request);
     }
+
+    public function store(Request $request)
+    {
+        return $this->pegawaiService->store($request);
+    }
+
+    public function show($id)
+    {
+        return $this->pegawaiService->show($id);
+    }
+
+    public function update(Request $request, $id)
+    {
+        return $this->pegawaiService->update($request, $id);
+    }
+
+    public function destroy($id)
+    {
+        return $this->pegawaiService->destroy($id);
+    }
 }

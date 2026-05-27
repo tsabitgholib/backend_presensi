@@ -23,7 +23,7 @@ class ShiftController extends Controller
         $unitValidationRules = AdminUnitHelper::getUnitIdValidationRules($request);
         
                 $request->validate(array_merge([
-            'name' => 'required',
+            'nama' => 'required',
                 ], $unitValidationRules));
 
         return $this->shiftService->store($request);
@@ -32,7 +32,7 @@ class ShiftController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'name' => 'sometimes|required',
+            'nama' => 'sometimes|required',
                 ]);
 
         return $this->shiftService->update($request, $id);
@@ -102,15 +102,15 @@ class ShiftController extends Controller
         return $this->shiftService->getByUnit($unit_id);
     }
 
-    public function assignPegawaiToShiftDetail(Request $request)
+    public function assignPegawaiToShift(Request $request)
     {
         $request->validate([
-                'shift_detail_id' => 'required|exists:mysql.shift_detail,id',
+                'shift_id' => 'required|exists:shift,id',
                 'pegawai_ids' => 'required|array',
-                'pegawai_ids.*' => 'exists:mysql_sdi.ms_orang,id',
+                'pegawai_ids.*' => 'exists:pegawai,id',
             ]);
 
-        return $this->shiftService->assignPegawaiToShiftDetail($request);
+        return $this->shiftService->assignPegawaiToShift($request);
     }
 
     public function getShiftDetailById($id)

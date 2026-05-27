@@ -4,9 +4,7 @@ namespace App\Services;
 
 use Illuminate\Http\Request;
 use App\Models\Unit;
-use App\Models\UnitDetail;
 use App\Helpers\AdminUnitHelper;
-use Illuminate\Support\Facades\DB;
 
 class UnitService
 {
@@ -17,20 +15,15 @@ class UnitService
 
     public function getUnit()
     {
-        $query = DB::select("
-            SELECT * FROM sdi.ms_unit
-            WHERE id_parent IS NULL OR level = 2
-        ");
-
+        $query = Unit::whereNull('parent_id')->orWhere('level', 2)->get();
         return response()->json($query);
     }
 
-    public function getUPK($unitId){
-        $query = DB::select("select * from sdi.ms_unit where id_parent = '$unitId' or id = '$unitId';");
-
+    public function getUPK($unitId)
+    {
+        $query = Unit::where('parent_id', $unitId)->orWhere('id', $unitId)->get();
         return response()->json($query);
     }
-
 
     public function getUnitsWithLocation(Request $request)
     {
@@ -46,32 +39,30 @@ class UnitService
                 return response()->json(['message' => 'Unit admin tidak ditemukan'], 404);
             }
 
-        $units = collect([$rootUnit])
-            ->merge($this->flattenUnits($rootUnit->childrenRecursive))
-            ->map(function ($unit) {
-                $unitDetail = $unit->unitDetails->first();
-                return [
-                    'id' => $unit->id,
-                    'nama' => $unit->nama,
-                    'level' => $unit->level,
-                    'id_parent' => $unit->id_parent,
-                    'lokasi' => $unitDetail ? $unitDetail->lokasi : null,
-                    'lokasi2' => $unitDetail ? $unitDetail->lokasi2 : null,
-                    'lokasi3' => $unitDetail ? $unitDetail->lokasi3 : null,
-                ];
-            });
-        } else {
-            $units = Unit::with('childrenRecursive', 'unitDetails')->get()
+            $units = collect([$rootUnit])
+                ->merge($this->flattenUnits($rootUnit->childrenRecursive))
                 ->map(function ($unit) {
-                    $unitDetail = $unit->unitDetails->first();
                     return [
                         'id' => $unit->id,
-                        'nama' => $unit->nama,
+                        'nama_unit' => $unit->nama_unit,
                         'level' => $unit->level,
-                        'id_parent' => $unit->id_parent,
-                        'lokasi' => $unitDetail ? $unitDetail->lokasi : null,
-                        'lokasi2' => $unitDetail ? $unitDetail->lokasi2 : null,
-                        'lokasi3' => $unitDetail ? $unitDetail->lokasi3 : null,
+                        'parent_id' => $unit->parent_id,
+                        'lokasi' => $unit->lokasi,
+                        'lokasi2' => $unit->lokasi2,
+                        'lokasi3' => $unit->lokasi3,
+                    ];
+                });
+        } else {
+            $units = Unit::with('childrenRecursive')->get()
+                ->map(function ($unit) {
+                    return [
+                        'id' => $unit->id,
+                        'nama_unit' => $unit->nama_unit,
+                        'level' => $unit->level,
+                        'parent_id' => $unit->parent_id,
+                        'lokasi' => $unit->lokasi,
+                        'lokasi2' => $unit->lokasi2,
+                        'lokasi3' => $unit->lokasi3,
                     ];
                 });
         }
@@ -79,9 +70,81 @@ class UnitService
         return response()->json($units);
     }
 
-    /**
-     * Helper flattening tree jadi list
-     */
+    public function store(Request $request)
+    {
+        $admin = $request->get('admin');
+        if (!$admin) {
+            return response()->json(['message' => 'Admin tidak ditemukan'], 401);
+        }
+
+        $request->validate([
+            'nama_unit' => 'required|string',
+            'alias' => 'nullable|string',
+            'parent_id' => 'nullable|exists:unit,id',
+            'level' => 'required|integer',
+            'lokasi' => 'nullable|array',
+            'lokasi2' => 'nullable|array',
+            'lokasi3' => 'nullable|array',
+        ]);
+
+        try {
+            $unit = Unit::create($request->all());
+            return response()->json($unit, 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $admin = $request->get('admin');
+        if (!$admin) {
+            return response()->json(['message' => 'Admin tidak ditemukan'], 401);
+        }
+
+        $unit = Unit::find($id);
+        if (!$unit) {
+            return response()->json(['message' => 'Unit tidak ditemukan'], 404);
+        }
+
+        $request->validate([
+            'nama_unit' => 'sometimes|required|string',
+            'alias' => 'nullable|string',
+            'parent_id' => 'nullable|exists:unit,id',
+            'level' => 'sometimes|required|integer',
+            'lokasi' => 'nullable|array',
+            'lokasi2' => 'nullable|array',
+            'lokasi3' => 'nullable|array',
+        ]);
+
+        try {
+            $unit->update($request->all());
+            return response()->json($unit);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $admin = request()->get('admin');
+        if (!$admin) {
+            return response()->json(['message' => 'Admin tidak ditemukan'], 401);
+        }
+
+        $unit = Unit::find($id);
+        if (!$unit) {
+            return response()->json(['message' => 'Unit tidak ditemukan'], 404);
+        }
+
+        try {
+            $unit->delete();
+            return response()->json(['message' => 'Unit deleted']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
     private function flattenUnits($units)
     {
         $result = collect();
@@ -96,9 +159,4 @@ class UnitService
 
         return $result;
     }
-
-
-
-
-    // Hapus method store, update, destroy
 }

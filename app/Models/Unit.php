@@ -42,11 +42,6 @@ class Unit extends Model
         return $this->hasMany(Admin::class, 'unit_id');
     }
 
-    public function unitDetails()
-    {
-        return $this->hasMany(UnitDetail::class, 'ms_unit_id');
-    }
-
     public function shifts()
     {
         return $this->hasMany(Shift::class, 'unit_id');

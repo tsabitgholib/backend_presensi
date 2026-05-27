@@ -12,15 +12,26 @@ class HariLibur extends Model
     protected $table = 'hari_libur';
 
     protected $fillable = [
-        'unit_detail_id',
+        'unit_id',
         'tanggal',
         'keterangan',
         'admin_unit_id'
     ];
 
-    public function unitDetail()
+    protected $casts = [
+        'tanggal' => 'date',
+    ];
+
+    public static function isHariLibur($unitId, $tanggal)
     {
-        return $this->belongsTo(UnitDetail::class, 'unit_detail_id');
+        return self::where('unit_id', $unitId)
+            ->where('tanggal', $tanggal)
+            ->exists();
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
     public function admin()

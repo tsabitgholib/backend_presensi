@@ -23,8 +23,19 @@ class PresensiJadwalDinas extends Model
 
     protected $casts = [
         'pegawai_ids' => 'array',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
     ];
+
+    public static function getJadwalDinasForPegawai($pegawaiId, $tanggal)
+    {
+        return self::where('is_active', true)
+            ->whereDate('tanggal_mulai', '<=', $tanggal)
+            ->whereDate('tanggal_selesai', '>=', $tanggal)
+            ->whereRaw('JSON_CONTAINS(pegawai_ids, ?)', [$pegawaiId])
+            ->first();
+    }
 
     public function unit()
     {

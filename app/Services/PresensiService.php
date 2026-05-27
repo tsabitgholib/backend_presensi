@@ -50,9 +50,8 @@ class PresensiService
         }
 
         $pegawai->load([
-            'pegawai.shiftDetail.shift',
-            'pegawai.unitDetailPresensi.unit',
-            'pegawai'
+            'shift.details',
+            'unit'
         ]);
 
         
@@ -62,24 +61,29 @@ class PresensiService
         // Cek apakah pegawai memiliki jadwal dinas hari ini
         $jadwalDinas = $this->checkJadwalDinas($pegawai->id, $now->toDateString());
 
-        $shiftDetail = $pegawai->shiftDetail;
-        if (!$shiftDetail) {
-            return response()->json(['message' => 'Shift detail tidak ditemukan untuk pegawai ini'], 400);
+        $shift = $pegawai->shift;
+        if (!$shift) {
+            return response()->json(['message' => 'Shift tidak ditemukan untuk pegawai ini'], 400);
         }
 
-        $unitDetail = $pegawai->unitDetailPresensi;
-        if (!$unitDetail) {
-            return response()->json(['message' => 'Unit detail tidak ditemukan'], 400);
+        $shiftDetail = $shift->details->first();
+        if (!$shiftDetail) {
+            return response()->json(['message' => 'Shift detail tidak ditemukan untuk shift ini'], 400);
+        }
+
+        $unit = $pegawai->unit;
+        if (!$unit) {
+            return response()->json(['message' => 'Unit tidak ditemukan'], 400);
         }
 
         // Validasi lokasi (point-in-polygon)
-        $polygon = $unitDetail->lokasi;
+        $polygon = $unit->lokasi;
         // if (!$this->isPointInPolygon($request->lokasi, $polygon)) {
         //     return response()->json(['message' => 'Lokasi di luar area'], 400);
         // }
 
         // Cek apakah hari ini adalah hari libur
-        $isHariLibur = \App\Models\HariLibur::isHariLibur($unitDetail->id, $now->toDateString());
+        $isHariLibur = \App\Models\HariLibur::isHariLibur($pegawai->unit_id, $now->toDateString());
         if ($isHariLibur) {
             return response()->json(['message' => 'Hari ini adalah hari libur'], 400);
         }
@@ -158,7 +162,7 @@ class PresensiService
         }
 
         // logic presensi
-        if ($pegawai->pegawai->profesi == 'driver' || $jadwalDinas) {
+        if ($pegawai->profesi == 'driver' || $jadwalDinas) {
             $statusMasuk = 'absen_masuk';
             $keteranganMasuk = $jadwalDinas ? $jadwalDinas->keterangan : 'Otomatis absen masuk';
             $waktuMasukUntukSimpan = $now;
@@ -211,7 +215,7 @@ class PresensiService
             'status_presensi' => $statusPresensi,
         ]);
 
-        if ($pegawai->pegawai->profesi == 'driver') {
+        if ($pegawai->profesi == 'driver') {
             $driverStatusPresensi = $jadwalDinas ? 'dinas' : 'hadir';
             $driverKeterangan = $jadwalDinas ? $jadwalDinas->keterangan : '';
 
@@ -225,8 +229,8 @@ class PresensiService
         }
 
         if ($jadwalDinas) {
-            $statusPresensiFinal = $jadwalDinas ? 'dinas' : 'hadir';
-            $keteranganFinal = $jadwalDinas ? $jadwalDinas->keterangan : 'dinas';
+            $statusPresensiFinal = 'dinas';
+            $keteranganFinal = $jadwalDinas->keterangan;
 
             $presensi->update([
                 'waktu_pulang' => $now,
@@ -313,7 +317,7 @@ class PresensiService
             'overtime' => $overtime,
         ]);
 
-        $shift_name = $shiftDetail->shift ? $shiftDetail->shift->name : null;
+        $shift_name = $shiftDetail->shift ? $shiftDetail->shift->nama : null;
         return response()->json([
             'no_ktp' => $presensi->no_ktp,
             'shift_name' => $shift_name,
@@ -1528,39 +1532,19 @@ class PresensiService
         }
         $unitId = $unitResult['unit_id'];
 
-        $unit_detail_id = $request->query('unit_detail_id');
-        $id_orang = $request->query('pegawai_id');
+        $pegawai_id = $request->query('pegawai_id');
         $from = $request->query('from');
         $to = $request->query('to');
 
-        // $pegawaiQuery = \App\Models\Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId, $unit_detail_id) {
-        //     $q->where('ms_unit_id', $unitId);
-        //     if ($unit_detail_id) {
-        //         $q->where('id', $unit_detail_id);
-        //     }
-        // });
-        $pegawaiQuery = "
-    SELECT p.*, u.nama as nama_unit 
-    FROM sdi.v_pegawai p
-    JOIN sdi.ms_unit u ON p.id_unit = u.id
-    WHERE (p.id_unit = ?
-";
-        $params = [$unitId];
+        // Query menggunakan model Pegawai, bukan sdi.v_pegawai
+        $pegawaiQuery = Pegawai::with('unit')
+            ->where('unit_id', $unitId);
 
-        if ($unitId == 1) {
-            $pegawaiQuery .= " OR p.terbantukan = 1";
+        if ($pegawai_id) {
+            $pegawaiQuery->where('id', $pegawai_id);
         }
 
-        $pegawaiQuery .= ")";
-
-        if ($id_orang) {
-            $pegawaiQuery .= " AND p.id_orang = ?";
-            $params[] = $id_orang;
-        }
-
-        $pegawais = DB::select($pegawaiQuery, $params);
-
-
+        $pegawais = $pegawaiQuery->get();
 
         $result = [];
         foreach ($pegawais as $pegawai) {
@@ -1601,20 +1585,12 @@ class PresensiService
                 ];
             }
 
-
-            $unitDetailName = null;
-            if ($pegawai->presensi_ms_unit_detail_id) {
-                $unitDetail = \App\Models\UnitDetail::find($pegawai->presensi_ms_unit_detail_id);
-                $unitDetailName = $unitDetail?->nama;
-            }
-
-
             $result[] = [
                 'pegawai' => [
                     'id' => $pegawai->id,
                     'no_ktp' => $pegawai->no_ktp,
                     'nama' => $pegawai->nama,
-                    'unit_detail_name' => $pegawai->nama_unit
+                    'unit_name' => $pegawai->unit?->nama_unit ?? null
                 ],
                 'presensi' => $presensiBerpasangan,
             ];
@@ -1641,8 +1617,7 @@ class PresensiService
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
             return response()->json(['message' => 'Format tanggal tidak valid. Gunakan format YYYY-MM-DD'], 422);
         }
-        $pegawai = Pegawai::with('orang')->where('id_orang', $pegawai_id)->firstOrFail();
-
+        $pegawai = Pegawai::with('unit')->findOrFail($pegawai_id);
 
         $unitResult = AdminUnitHelper::getUnitId($request);
         if ($unitResult['error']) {
@@ -1650,13 +1625,13 @@ class PresensiService
         }
         $unitId = $unitResult['unit_id'];
 
-        // // Validasi pegawai milik unit admin
-        // if (!$pegawai->unitDetailPresensi || $pegawai->unitDetailPresensi->unit_id != $unitId) {
-        //     return response()->json(['message' => 'Tidak memiliki akses edit presensi pegawai ini'], 403);
-        // }
+        // Validasi pegawai milik unit admin
+        if (!$pegawai->unit || $pegawai->unit_id != $unitId) {
+            return response()->json(['message' => 'Tidak memiliki akses edit presensi pegawai ini'], 403);
+        }
 
         // Menggunakan format baru - 1 row per hari
-        $presensi = \App\Models\Presensi::where('no_ktp', $pegawai->orang->no_ktp)
+        $presensi = \App\Models\Presensi::where('no_ktp', $pegawai->no_ktp)
             ->whereDate('waktu_masuk', $tanggal)
             ->first();
         if (!$presensi) {

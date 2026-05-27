@@ -12,7 +12,7 @@ class Shift extends Model
     protected $table = 'shift';
 
     protected $fillable = [
-        'name',
+        'nama',
         'unit_id'
     ];
 

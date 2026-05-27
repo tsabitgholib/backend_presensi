@@ -30,4 +30,19 @@ class UnitController extends Controller
     {
         return $this->unitService->getUnitsWithLocation($request);
     }
+
+    public function store(Request $request)
+    {
+        return $this->unitService->store($request);
+    }
+
+    public function update(Request $request, $id)
+    {
+        return $this->unitService->update($request, $id);
+    }
+
+    public function destroy($id)
+    {
+        return $this->unitService->destroy($id);
+    }
 }

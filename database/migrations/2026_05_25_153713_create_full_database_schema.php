@@ -38,16 +38,17 @@ return new class extends Migration
         // 3. Pegawai Table (Base entity)
         Schema::create('pegawai', function (Blueprint $table) {
             $table->increments('id');
-            $table->unsignedInteger('id_orang')->nullable();
-            $table->unsignedInteger('id_user')->nullable();
             $table->string('nama')->nullable();
             $table->string('no_ktp', 50)->nullable();
             $table->string('nip_unit', 50)->nullable();
             $table->unsignedBigInteger('unit_id')->nullable();
-            $table->unsignedBigInteger('presensi_shift_detail_id')->nullable();
-            $table->unsignedBigInteger('presensi_ms_unit_detail_id')->nullable();
+            $table->unsignedBigInteger('shift_id')->nullable();
+            $table->string('profesi')->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
+            
+            $table->foreign('shift_id')->references('id')->on('shift')->onDelete('set null');
+            $table->foreign('unit_id')->references('id')->on('unit')->onDelete('set null');
         });
 
         // 4. Cuti, Izin, Sakit Tables
@@ -96,7 +97,7 @@ return new class extends Migration
         // 6. Shift Table
         Schema::create('shift', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('nama');
             $table->unsignedBigInteger('unit_id');
             $table->timestamps();
             $table->index('unit_id', 'shift_unit_id_foreign');
@@ -185,14 +186,14 @@ return new class extends Migration
         // 13. Hari Libur Table
         Schema::create('hari_libur', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('unit_detail_id');
+            $table->unsignedBigInteger('unit_id');
             $table->date('tanggal');
             $table->string('keterangan');
             $table->unsignedBigInteger('admin_unit_id');
             $table->timestamps();
-            $table->unique(['unit_detail_id', 'tanggal'], 'hari_libur_unit_detail_id_tanggal_unique');
+            $table->unique(['unit_id', 'tanggal'], 'hari_libur_unit_id_tanggal_unique');
             $table->foreign('admin_unit_id')->references('id')->on('admin')->onDelete('cascade');
-            $table->foreign('unit_detail_id')->references('id')->on('presensi_ms_unit_detail')->onDelete('cascade');
+            $table->foreign('unit_id')->references('id')->on('unit')->onDelete('cascade');
         });
 
         // 14. Pengajuan Cuti Table
