@@ -12,7 +12,7 @@ class Event extends Model
     protected $table = 'events';
 
     protected $fillable = [
-        'ms_unit_id',
+        'unit_id',
         'nama_event',
         'deskripsi',
         'tipe_event',
@@ -41,7 +41,7 @@ class Event extends Model
 
     public function unit()
     {
-        return $this->belongsTo(Unit::class, 'ms_unit_id');
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
     public function pegawais()

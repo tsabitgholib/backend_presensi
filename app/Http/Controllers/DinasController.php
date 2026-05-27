@@ -22,7 +22,7 @@ class DinasController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'keterangan' => 'required|string|max:255',
             'pegawai_ids' => 'required|array',
-            'pegawai_ids.*' => 'exists:mysql_sdi.ms_pegawai,id',
+            'pegawai_ids.*' => 'exists:pegawai,id',
                 ], $unitValidationRules));
 
         return $this->dinasService->store($request);
@@ -42,7 +42,7 @@ class DinasController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'keterangan'      => 'required|string|max:255',
             'pegawai_ids'     => 'required|array',
-            'pegawai_ids.*'   => 'exists:mysql_sdi.ms_pegawai,id',
+            'pegawai_ids.*'   => 'exists:pegawai,id',
                 ], $unitValidationRules));
 
         return $this->dinasService->update($request, $id);

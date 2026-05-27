@@ -39,17 +39,17 @@ class PengajuanCutiService
         $admin = $request->get('admin');
         $unitId = $admin->unit_id;
 
-        $pengajuan = DB::table('sdi_presensi.pengajuan_cuti as pc')
-            ->join('sdi.v_pegawai as p', 'p.id', '=', 'pc.pegawai_id')
-            ->select('pc.*', 'p.nama')
-            ->where(function ($q) use ($unitId) {
-                $q->where('p.id_unit', $unitId);
+        $pengajuan = PengajuanCuti::with(['pegawai' => function ($query) {
+                $query->select('id', 'nama');
+            }])
+            ->whereHas('pegawai', function ($q) use ($unitId) {
+                $q->where('unit_id', $unitId);
 
                 if ($unitId == 1) {
-                    $q->orWhere('p.terbantukan', 1);
+                    $q->orWhereRaw('1=1');
                 }
             })
-            ->orderBy('pc.id', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate(10);
 
         return response()->json($pengajuan);

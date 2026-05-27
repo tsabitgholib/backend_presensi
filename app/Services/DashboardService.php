@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\Presensi;
 use App\Models\Pegawai;
 use App\Models\Unit;
-use App\Models\UnitDetail;
 use App\Models\PengajuanCuti;
 use App\Models\PengajuanSakit;
 use App\Models\PengajuanIzin;
@@ -36,10 +35,7 @@ class DashboardService
         $isSpecificUnit = $unitId || $admin->role === 'admin_unit';
 
         if ($isAllUnits) {
-            $pegawais = DB::connection('mysql_sdi')->select("
-                SELECT id, id_orang, nama, no_ktp, presensi_ms_unit_detail_id 
-                FROM v_pegawai
-            ");
+            $pegawais = Pegawai::all();
 
             $scopeInfo = [
                 'type' => 'all_units',
@@ -56,24 +52,12 @@ class DashboardService
                 }
             }
 
-            $whereCondition = "id_unit = :unitId";
-            $params = ['unitId' => $targetUnitId];
-
-            if ($targetUnitId == 1) {
-                $whereCondition = "(id_unit = :unitId OR terbantukan = 1)";
-            }
-
-            $pegawais = DB::connection('mysql_sdi')->select("
-                SELECT id, id_orang, nama, no_ktp, presensi_ms_unit_detail_id 
-                FROM v_pegawai
-                WHERE $whereCondition
-            ", $params);
-
+            $pegawais = Pegawai::where('unit_id', $targetUnitId)->get();
 
             $unit = Unit::find($targetUnitId);
             $scopeInfo = [
                 'type' => 'specific_unit',
-                'unit' => $unit ? $unit->nama : 'Unit ' . $targetUnitId,
+                'unit' => $unit ? $unit->nama_unit : 'Unit ' . $targetUnitId,
                 'unit_id' => $targetUnitId
             ];
 

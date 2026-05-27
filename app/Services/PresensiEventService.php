@@ -217,7 +217,7 @@ class PresensiEventService
         //limit 2
         $events = Event::select('events.*')
             ->join('events_pegawai', 'events.id', '=', 'events_pegawai.events_id')
-            ->where('events_pegawai.pegawai_id', $pegawai->pegawai->id)
+            ->where('events_pegawai.pegawai_id', $pegawai->id)
             // ->limit(2)
             ->when($tipeEvent, function ($query) use ($tipeEvent) {
                 $query->where('events.tipe_event', $tipeEvent);
@@ -256,7 +256,7 @@ class PresensiEventService
 
         $events = Event::select('events.id', 'events.nama_event')
             ->join('events_pegawai', 'events.id', '=', 'events_pegawai.events_id')
-            ->where('events_pegawai.pegawai_id', $pegawai->pegawai->id);
+            ->where('events_pegawai.pegawai_id', $pegawai->id);
 
         $events = $events->get();
         if ($events->isEmpty()) {
@@ -324,29 +324,22 @@ class PresensiEventService
         }
         $unitId = $unitResult['unit_id'];
 
-        $event = Event::where('id', $id)->where('ms_unit_id', $unitId)->first();
+        $event = Event::where('id', $id)->where('unit_id', $unitId)->first();
         if (!$event) {
             return response()->json(['message' => 'Event tidak ditemukan'], 404);
         }
 
-        $history = PresensiEvent::with('event:id,nama_event,tipe_event')
-            ->join('sdi.v_pegawai as p', 'p.no_ktp', '=', 'presensi_event.no_ktp')
+        $history = PresensiEvent::with([
+                'event:id,nama_event,tipe_event',
+                'pegawai:id,nama,no_ktp'
+            ])
             ->where('presensi_event.events_id', $id)
             ->orderBy('presensi_event.created_at', 'desc')
-            ->select(
-                'presensi_event.*',
-                'p.gelar_depan',
-                'p.nama',
-                'p.gelar_belakang'
-            )
+            ->select('presensi_event.*')
             ->get();
 
         $formatted = $history->map(function ($item) {
-            $namaLengkap = trim(
-                ($item->gelar_depan ? $item->gelar_depan . ' ' : '') .
-                $item->nama .
-                ($item->gelar_belakang ? ' ' . $item->gelar_belakang : '')
-            );
+            $namaLengkap = $item->pegawai?->nama ?? '';
 
             return [
                 'id' => $item->id,

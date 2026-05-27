@@ -7,11 +7,15 @@ use App\Models\Presensi;
 use App\Models\Pegawai;
 use App\Models\Shift;
 use App\Models\ShiftDetail;
-use App\Models\UnitDetail;
 use App\Models\PresensiJadwalDinas;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\AdminUnitHelper;
+use App\Models\HariLibur;
+use App\Models\LaukPaukUnit;
+use App\Models\PengajuanCuti;
+use App\Models\PengajuanIzin;
+use App\Models\PengajuanSakit;
 
 class PresensiService
 {
@@ -83,7 +87,7 @@ class PresensiService
         // }
 
         // Cek apakah hari ini adalah hari libur
-        $isHariLibur = \App\Models\HariLibur::isHariLibur($pegawai->unit_id, $now->toDateString());
+        $isHariLibur = HariLibur::isHariLibur($pegawai->unit_id, $now->toDateString());
         if ($isHariLibur) {
             return response()->json(['message' => 'Hari ini adalah hari libur'], 400);
         }
@@ -317,10 +321,10 @@ class PresensiService
             'overtime' => $overtime,
         ]);
 
-        $shift_name = $shiftDetail->shift ? $shiftDetail->shift->nama : null;
+        $shift_nama = $shiftDetail->shift ? $shiftDetail->shift->nama : null;
         return response()->json([
             'no_ktp' => $presensi->no_ktp,
-            'shift_name' => $shift_name,
+            'shift_nama' => $shift_nama,
             'shift_detail_id' => $presensi->shift_detail_id,
             'tanggal' => $presensi->waktu_masuk->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d'),
             'waktu' => $presensi->waktu_pulang->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('H:i:s'),
@@ -377,28 +381,22 @@ class PresensiService
     public function today(Request $request)
     {
         $pegawai = $request->get('pegawai');
-
-        $pegawai->load([
-            'pegawai.shiftDetail.shift',
-            'pegawai.unitDetailPresensi.unit',
-            'pegawai'
-        ]);
         if (!$pegawai) {
             return response()->json(['message' => 'Pegawai tidak ditemukan'], 401);
         }
+
         $today = \Carbon\Carbon::now('Asia/Jakarta')->toDateString();
 
         $presensi = Presensi::where('no_ktp', $pegawai->no_ktp)
             ->whereDate('waktu_masuk', $today)
             ->first();
 
-        // $statusPresensi = $presensi?->status_presensi ?? $presensi?->status_masuk ?? null;
         $status_final = null;
-        if ($presensi->status_presensi == null && $presensi->status_masuk == 'terlambat') {
+        if ($presensi && $presensi->status_presensi == null && $presensi->status_masuk == 'terlambat') {
             $status_final = 'terlambat';
-        } else if ($presensi->status_presensi == null && $presensi->status_masuk == 'tidak_absen_masuk') {
+        } else if ($presensi && $presensi->status_presensi == null && $presensi->status_masuk == 'tidak_absen_masuk') {
             $status_final = 'tidak_absen_masuk';
-        } else {
+        } else if ($presensi) {
             $status_final = $presensi->status_presensi;
         }
 
@@ -418,12 +416,6 @@ class PresensiService
     public function history(Request $request)
     {
         $pegawai = $request->get('pegawai');
-
-        $pegawai->load([
-            'pegawai.shiftDetail.shift',
-            'pegawai.unitDetailPresensi.unit',
-            'pegawai'
-        ]);
 
         if (!$pegawai) {
             return response()->json(['message' => 'Pegawai tidak ditemukan'], 401);
@@ -520,40 +512,34 @@ class PresensiService
         $unitId = $unitResult['unit_id'];
 
         $tanggal = $request->query('tanggal', now('Asia/Jakarta')->toDateString());
-        $pegawais = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
-            $q->where('id_unit', $unitId);
-        })->with('orang')->get();
+        $pegawais = Pegawai::where('unit_id', $unitId)->get();
 
         $result = [];
         foreach ($pegawais as $pegawai) {
-            if (!$pegawai->orang) {
-                continue;
-            }
-
             $start = \Carbon\Carbon::parse($tanggal)->startOfDay();
             $end   = $start->copy()->endOfDay();
 
             // Ambil presensi untuk hari itu
-            $presensis = Presensi::where('no_ktp', $pegawai->orang->no_ktp)
+            $presensis = Presensi::where('no_ktp', $pegawai->no_ktp)
                 ->whereBetween('waktu_masuk', [$start, $end])
                 ->get();
 
             // Ambil pengajuan
-            $izin = \App\Models\PengajuanIzin::where('pegawai_id', $pegawai->id)
+            $izin = PengajuanIzin::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
                         ->orWhereBetween('tanggal_selesai', [$start, $end]);
                 })->count();
 
-            $cuti = \App\Models\PengajuanCuti::where('pegawai_id', $pegawai->id)
+            $cuti = PengajuanCuti::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
                         ->orWhereBetween('tanggal_selesai', [$start, $end]);
                 })->count();
 
-            $sakit = \App\Models\PengajuanSakit::where('pegawai_id', $pegawai->id)
+            $sakit = PengajuanSakit::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
@@ -628,8 +614,8 @@ class PresensiService
 
             $result[] = [
                 'id' => $pegawai->id,
-                'no_ktp' => $pegawai->orang->no_ktp,
-                'nama' => $pegawai->orang->nama,
+                'no_ktp' => $pegawai->no_ktp,
+                'nama' => $pegawai->nama,
                 'total_hadir' => $total_hadir,
                 'total_tidak_masuk' => $total_tidak_masuk,
                 'total_izin' => $izin,
@@ -675,26 +661,26 @@ class PresensiService
     //         $end = $start->copy()->endOfMonth();
 
     //         // Ambil presensi pada bulan tsb (format baru: 1 row per hari)
-    //         $presensis = \App\Models\Presensi::where('no_ktp', $pegawai->no_ktp)
+    //         $presensis = Presensi::where('no_ktp', $pegawai->no_ktp)
     //             ->whereBetween('waktu_masuk', [$start->toDateString() . ' 00:00:00', $end->toDateString() . ' 23:59:59'])
     //             ->get();
 
     //         // Ambil pengajuan pada bulan tsb
-    //         $izin = \App\Models\PengajuanIzin::where('pegawai_id', $pegawai->id)
+    //         $izin = PengajuanIzin::where('pegawai_id', $pegawai->id)
     //             ->where('status', 'diterima')
     //             ->where(function ($q) use ($start, $end) {
     //                 $q->whereBetween('tanggal_mulai', [$start, $end])
     //                     ->orWhereBetween('tanggal_selesai', [$start, $end]);
     //             })->get();
 
-    //         $cuti = \App\Models\PengajuanCuti::where('pegawai_id', $pegawai->id)
+    //         $cuti = PengajuanCuti::where('pegawai_id', $pegawai->id)
     //             ->where('status', 'diterima')
     //             ->where(function ($q) use ($start, $end) {
     //                 $q->whereBetween('tanggal_mulai', [$start, $end])
     //                     ->orWhereBetween('tanggal_selesai', [$start, $end]);
     //             })->get();
 
-    //         $sakit = \App\Models\PengajuanSakit::where('pegawai_id', $pegawai->id)
+    //         $sakit = PengajuanSakit::where('pegawai_id', $pegawai->id)
     //             ->where('status', 'diterima')
     //             ->where(function ($q) use ($start, $end) {
     //                 $q->whereBetween('tanggal_mulai', [$start, $end])
@@ -728,7 +714,7 @@ class PresensiService
     //             // Skip hari libur unit
     //             $unit = $pegawai->pegawai->unitDetailPresensi->unit ?? null;
     //             if ($unit) {
-    //                 $isHariLibur = \App\Models\HariLibur::isHariLibur($unit->id, $carbon->toDateString());
+    //                 $isHariLibur = HariLibur::isHariLibur($unit->id, $carbon->toDateString());
     //                 if ($isHariLibur) {
     //                     continue;
     //                 }
@@ -818,23 +804,17 @@ class PresensiService
         $pegawaiId = $request->query('pegawai_id');
 
         if ($pegawaiId) {
-            $pegawai = \App\Models\Pegawai::with(['unitDetailPresensi.unit'])
-                ->find($pegawaiId);
+            $pegawai = Pegawai::find($pegawaiId);
 
             if (!$pegawai) {
                 return response()->json(['message' => 'Pegawai dengan ID ' . $pegawaiId . ' tidak ditemukan'], 404);
             }
-
-            $pegawai->load('orang');
-            $pegawai->no_ktp = $pegawai->orang->no_ktp ?? null;
         } else {
             $pegawai = $request->get('pegawai');
 
             if (!$pegawai) {
                 return response()->json(['message' => 'Pegawai tidak ditemukan'], 401);
             }
-
-            $pegawai->load(['pegawai.unitDetailPresensi.unit', 'pegawai']);
         }
         $tahun = (int) $request->query('tahun', now('Asia/Jakarta')->year);
 
@@ -845,27 +825,27 @@ class PresensiService
             $end = $start->copy()->endOfMonth();
 
             // Ambil presensi berdasarkan waktu_masuk
-            $presensis = \App\Models\Presensi::where('no_ktp', $pegawai->no_ktp)
+            $presensis = Presensi::where('no_ktp', $pegawai->no_ktp)
                 ->whereBetween('waktu_masuk', [$start->toDateString() . ' 00:00:00', $end->toDateString() . ' 23:59:59'])
                 ->orderBy('waktu_masuk')
                 ->get();
 
             // Ambil pengajuan
-            $izin = \App\Models\PengajuanIzin::where('pegawai_id', $pegawai->id)
+            $izin = PengajuanIzin::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
                         ->orWhereBetween('tanggal_selesai', [$start, $end]);
                 })->get();
 
-            $cuti = \App\Models\PengajuanCuti::where('pegawai_id', $pegawai->id)
+            $cuti = PengajuanCuti::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
                         ->orWhereBetween('tanggal_selesai', [$start, $end]);
                 })->get();
 
-            $sakit = \App\Models\PengajuanSakit::where('pegawai_id', $pegawai->id)
+            $sakit = PengajuanSakit::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
@@ -896,9 +876,8 @@ class PresensiService
                 if ($carbon->isSaturday() || $carbon->isSunday()) continue;
 
                 // Skip libur unit
-                $unit = $pegawai->pegawai->unitDetailPresensi->unit ?? null;
-                if ($unit) {
-                    $isHariLibur = \App\Models\HariLibur::isHariLibur($unit->id, $carbon->toDateString());
+                if ($pegawai->unit_id) {
+                    $isHariLibur = HariLibur::isHariLibur($pegawai->unit_id, $carbon->toDateString());
                     if ($isHariLibur) continue;
                 }
                 $hariEfektif++;
@@ -1006,19 +985,16 @@ class PresensiService
         }
         $unitId = $unitResult['unit_id'];
 
-        $query = "
-            SELECT id, id_orang, no_ktp, nama
-            FROM sdi.v_pegawai
-            WHERE id_unit = ?
-        ";
-
-        $params = [$unitId];
+        $pegawais = Pegawai::where('unit_id', $unitId);
 
         if ($unitId == 1) {
-            $query .= " OR terbantukan = 1";
+            $pegawais = Pegawai::where('unit_id', $unitId)
+                ->orWhere(function ($query) {
+                    $query->whereRaw('1=1');
+                });
         }
 
-        $pegawais = collect(DB::select($query, $params));
+        $pegawais = $pegawais->get();
 
 
         // echo json_encode($pegawais);
@@ -1138,7 +1114,7 @@ class PresensiService
     //             continue;
     //         }
 
-    //         $isHariLibur = \App\Models\HariLibur::isHariLibur($pegawai->unitDetailPresensi->unit->id, $carbon->toDateString());
+    //         $isHariLibur = HariLibur::isHariLibur($pegawai->unitDetailPresensi->unit->id, $carbon->toDateString());
     //         if ($isHariLibur) {
     //             continue;
     //         }
@@ -1147,27 +1123,27 @@ class PresensiService
     //     }
 
     //     // Ambil presensi pegawai di bulan tsb
-    //     $presensi = \App\Models\Presensi::where('no_ktp', $pegawai->no_ktp)
+    //     $presensi = Presensi::where('no_ktp', $pegawai->no_ktp)
     //         ->whereBetween('waktu_masuk', [$start->toDateString() . ' 00:00:00', $end->toDateString() . ' 23:59:59'])
     //         ->orderBy('waktu_masuk')
     //         ->get();
 
     //     // Ambil pengajuan izin, cuti, sakit
-    //     $izin = \App\Models\PengajuanIzin::where('pegawai_id', $pegawai->id)
+    //     $izin = PengajuanIzin::where('pegawai_id', $pegawai->id)
     //         ->where('status', 'diterima')
     //         ->where(function ($q) use ($start, $end) {
     //             $q->whereBetween('tanggal_mulai', [$start, $end])
     //                 ->orWhereBetween('tanggal_selesai', [$start, $end]);
     //         })->get();
 
-    //     $cuti = \App\Models\PengajuanCuti::where('pegawai_id', $pegawai->id)
+    //     $cuti = PengajuanCuti::where('pegawai_id', $pegawai->id)
     //         ->where('status', 'diterima')
     //         ->where(function ($q) use ($start, $end) {
     //             $q->whereBetween('tanggal_mulai', [$start, $end])
     //                 ->orWhereBetween('tanggal_selesai', [$start, $end]);
     //         })->get();
 
-    //     $sakit = \App\Models\PengajuanSakit::where('pegawai_id', $pegawai->id)
+    //     $sakit = PengajuanSakit::where('pegawai_id', $pegawai->id)
     //         ->where('status', 'diterima')
     //         ->where(function ($q) use ($start, $end) {
     //             $q->whereBetween('tanggal_mulai', [$start, $end])
@@ -1213,7 +1189,7 @@ class PresensiService
     //             continue;
     //         }
 
-    //         $isHariLibur = \App\Models\HariLibur::isHariLibur($pegawai->unitDetailPresensi->unit->id, $carbon->toDateString());
+    //         $isHariLibur = HariLibur::isHariLibur($pegawai->unitDetailPresensi->unit->id, $carbon->toDateString());
     //         if ($isHariLibur) {
     //             continue;
     //         }
@@ -1316,11 +1292,6 @@ class PresensiService
     public function rekapHistoryBulananPegawai(Request $request)
     {
         $pegawai = $request->get('pegawai');
-        $pegawai->load([
-            'pegawai.shiftDetail.shift',
-            'pegawai.unitDetailPresensi.unit',
-            'pegawai'
-        ]);
         if (!$pegawai) {
             return response()->json(['message' => 'Pegawai tidak ditemukan'], 401);
         }
@@ -1342,32 +1313,32 @@ class PresensiService
         foreach ($tanggalList as $tanggal) {
             $carbon = \Carbon\Carbon::parse($tanggal);
             if ($carbon->isSaturday() || $carbon->isSunday()) continue;
-            if (\App\Models\HariLibur::isHariLibur($pegawai->unitDetailPresensi->unit->id, $carbon->toDateString())) continue;
+            if ($pegawai->unit_id && HariLibur::isHariLibur($pegawai->unit_id, $carbon->toDateString())) continue;
             $hariEfektif++;
         }
 
         // Ambil presensi pegawai di bulan tsb (pakai waktu_masuk)
-        $presensi = \App\Models\Presensi::where('no_ktp', $pegawai->no_ktp)
+        $presensi = Presensi::where('no_ktp', $pegawai->no_ktp)
             ->whereBetween('waktu_masuk', [$start->toDateString() . ' 00:00:00', $end->toDateString() . ' 23:59:59'])
             ->orderBy('waktu_masuk')
             ->get();
 
         // Ambil pengajuan izin, cuti, sakit
-        $izin = \App\Models\PengajuanIzin::where('pegawai_id', $pegawai->id)
+        $izin = PengajuanIzin::where('pegawai_id', $pegawai->id)
             ->where('status', 'diterima')
             ->where(function ($q) use ($start, $end) {
                 $q->whereBetween('tanggal_mulai', [$start, $end])
                     ->orWhereBetween('tanggal_selesai', [$start, $end]);
             })->get();
 
-        $cuti = \App\Models\PengajuanCuti::where('pegawai_id', $pegawai->id)
+        $cuti = PengajuanCuti::where('pegawai_id', $pegawai->id)
             ->where('status', 'diterima')
             ->where(function ($q) use ($start, $end) {
                 $q->whereBetween('tanggal_mulai', [$start, $end])
                     ->orWhereBetween('tanggal_selesai', [$start, $end]);
             })->get();
 
-        $sakit = \App\Models\PengajuanSakit::where('pegawai_id', $pegawai->id)
+        $sakit = PengajuanSakit::where('pegawai_id', $pegawai->id)
             ->where('status', 'diterima')
             ->where(function ($q) use ($start, $end) {
                 $q->whereBetween('tanggal_mulai', [$start, $end])
@@ -1410,7 +1381,7 @@ class PresensiService
 
             // Skip weekend/libur
             if ($carbon->isSaturday() || $carbon->isSunday()) continue;
-            if (\App\Models\HariLibur::isHariLibur($pegawai->unitDetailPresensi->unit->id, $carbon->toDateString())) continue;
+            if ($pegawai->unit_id && HariLibur::isHariLibur($pegawai->unit_id, $carbon->toDateString())) continue;
 
             $status = null;
             $dayString = $carbon->format('d');
@@ -1421,7 +1392,6 @@ class PresensiService
             });
 
             // PRIORITAS:
-            // 1) dinas
             // 1) dinas
             if ($presensiHari->where('status_presensi', 'dinas')->count()) {
                 $status = 'dinas';
@@ -1548,7 +1518,7 @@ class PresensiService
 
         $result = [];
         foreach ($pegawais as $pegawai) {
-            $presensiQuery = \App\Models\Presensi::where('no_ktp', $pegawai->no_ktp);
+            $presensiQuery = Presensi::where('no_ktp', $pegawai->no_ktp);
             if ($from) {
                 $presensiQuery->whereDate('waktu_masuk', '>=', $from);
             }
@@ -1590,7 +1560,7 @@ class PresensiService
                     'id' => $pegawai->id,
                     'no_ktp' => $pegawai->no_ktp,
                     'nama' => $pegawai->nama,
-                    'unit_name' => $pegawai->unit?->nama_unit ?? null
+                    'unit_nama' => $pegawai->unit?->nama_unit ?? null
                 ],
                 'presensi' => $presensiBerpasangan,
             ];
@@ -1631,7 +1601,7 @@ class PresensiService
         }
 
         // Menggunakan format baru - 1 row per hari
-        $presensi = \App\Models\Presensi::where('no_ktp', $pegawai->no_ktp)
+        $presensi = Presensi::where('no_ktp', $pegawai->no_ktp)
             ->whereDate('waktu_masuk', $tanggal)
             ->first();
         if (!$presensi) {
@@ -1645,12 +1615,12 @@ class PresensiService
             $waktuPulang = $update['waktu_pulang'] ?? null;
 
 
-            if ($statusMasuk && !\App\Models\Presensi::isValidStatusMasuk($statusMasuk)) {
+            if ($statusMasuk && !Presensi::isValidStatusMasuk($statusMasuk)) {
                 return response()->json(['message' => 'Status masuk tidak valid'], 422);
             }
 
             // Validasi status pulang
-            if ($statusPulang && !\App\Models\Presensi::isValidStatusPulang($statusPulang)) {
+            if ($statusPulang && !Presensi::isValidStatusPulang($statusPulang)) {
                 return response()->json(['message' => 'Status pulang tidak valid'], 422);
             }
 
@@ -1743,7 +1713,7 @@ class PresensiService
         ];
         for ($bulan = 1; $bulan <= $bulanSekarang; $bulan++) {
             // Ambil semua pegawai di unit admin
-            $pegawais = \App\Models\Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
+            $pegawais = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
                 $q->where('ms_unit_id', $unitId);
             })
                 ->whereHas('orang')
@@ -1761,23 +1731,23 @@ class PresensiService
             $jumlahHari = $end->day;
             foreach ($pegawais as $pegawai) {
                 // Ambil presensi pegawai di bulan tsb (format baru)
-                $presensi = \App\Models\Presensi::where('no_ktp', $pegawai->no_ktp)
+                $presensi = Presensi::where('no_ktp', $pegawai->no_ktp)
                     ->whereBetween('waktu_masuk', [$start->toDateString() . ' 00:00:00', $end->toDateString() . ' 23:59:59'])
                     ->orderBy('waktu_masuk')
                     ->get();
-                $izin = \App\Models\PengajuanIzin::where('pegawai_id', $pegawai->id)
+                $izin = PengajuanIzin::where('pegawai_id', $pegawai->id)
                     ->where('status', 'diterima')
                     ->where(function ($q) use ($start, $end) {
                         $q->whereBetween('tanggal_mulai', [$start, $end])
                             ->orWhereBetween('tanggal_selesai', [$start, $end]);
                     })->get();
-                $cuti = \App\Models\PengajuanCuti::where('pegawai_id', $pegawai->id)
+                $cuti = PengajuanCuti::where('pegawai_id', $pegawai->id)
                     ->where('status', 'diterima')
                     ->where(function ($q) use ($start, $end) {
                         $q->whereBetween('tanggal_mulai', [$start, $end])
                             ->orWhereBetween('tanggal_selesai', [$start, $end]);
                     })->get();
-                $sakit = \App\Models\PengajuanSakit::where('pegawai_id', $pegawai->id)
+                $sakit = PengajuanSakit::where('pegawai_id', $pegawai->id)
                     ->where('status', 'diterima')
                     ->where(function ($q) use ($start, $end) {
                         $q->whereBetween('tanggal_mulai', [$start, $end])
@@ -1839,7 +1809,7 @@ class PresensiService
         $tahun = $request->query('tahun', now('Asia/Jakarta')->year);
         $bulanSekarang = now('Asia/Jakarta')->month;
 
-        $pegawai = \App\Models\Pegawai::with('orang')->where('id_orang', $pegawai_id)->first();
+        $pegawai = Pegawai::with('orang')->where('id_orang', $pegawai_id)->first();
         if (!$pegawai) {
             return response()->json(['message' => 'Pegawai tidak ditemukan'], 404);
         }
@@ -1892,26 +1862,26 @@ class PresensiService
             }
 
 
-            $presensi = \App\Models\Presensi::where('no_ktp', $pegawai->orang->no_ktp)
+            $presensi = Presensi::where('no_ktp', $pegawai->orang->no_ktp)
                 ->whereBetween('waktu_masuk', [$start->toDateString() . ' 00:00:00', $end->toDateString() . ' 23:59:59'])
                 ->orderBy('waktu_masuk')
                 ->get();
 
-            $izin = \App\Models\PengajuanIzin::where('pegawai_id', $pegawai->id)
+            $izin = PengajuanIzin::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
                         ->orWhereBetween('tanggal_selesai', [$start, $end]);
                 })->get();
 
-            $cuti = \App\Models\PengajuanCuti::where('pegawai_id', $pegawai->id)
+            $cuti = PengajuanCuti::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
                         ->orWhereBetween('tanggal_selesai', [$start, $end]);
                 })->get();
 
-            $sakit = \App\Models\PengajuanSakit::where('pegawai_id', $pegawai->id)
+            $sakit = PengajuanSakit::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
@@ -2183,7 +2153,7 @@ class PresensiService
         $end = $start->copy()->endOfMonth();
 
         $hariLiburMap = [];
-        $hariLiburAll = \App\Models\HariLibur::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->get();
+        $hariLiburAll = HariLibur::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->get();
         foreach ($hariLiburAll as $hl) {
             $hariLiburMap[$hl->unit_detail_id][$hl->tanggal->format('Y-m-d')] = true;
         }
@@ -2198,48 +2168,33 @@ class PresensiService
         $rawSql = "
             WITH RECURSIVE parent_cte AS (
                 SELECT id, id_parent
-                FROM sdi.ms_unit
+                FROM unit
                 WHERE id = :unitId
 
                 UNION ALL
 
                 SELECT u.id, u.id_parent
-                FROM sdi.ms_unit u
+                FROM unit u
                 JOIN parent_cte p ON u.id = p.id_parent
             )
             SELECT 
-                pg.id_orang AS id,
+                pg.id,
                 pg.no_ktp,
-                TRIM(
-                    CONCAT_WS(
-                        ' ',
-                        pg.gelar_depan,
-                        pg.nama,
-                        CASE 
-                            WHEN pg.gelar_belakang <> '' THEN CONCAT(', ', pg.gelar_belakang)
-                            ELSE ''
-                        END
-                    )
-                ) AS nama,
-                pg.tmpt_lahir,
-                pg.tgl_lahir,
+                pg.nama,
                 pg.jenis_kelamin,
-                pg.kelurahan_ktp AS alamat_ktp,
                 pg.no_hp,
                 pg.unit AS nama_unit,
-                pg.id_unit AS unit_id_presensi,
-                pg.presensi_ms_unit_detail_id,
-                pg.presensi_shift_detail_id,
-                s.name AS nama_shift,
-                mu.nama AS nama_lokasi_presensi,
-                pmud.lokasi AS lokasi_presensi
-            FROM sdi.v_pegawai pg
-            LEFT JOIN sdi_presensi.shift_detail sd ON sd.id = pg.presensi_shift_detail_id
-            LEFT JOIN sdi_presensi.shift s ON s.id = sd.shift_id
-            LEFT JOIN sdi_presensi.presensi_ms_unit_detail pmud ON pmud.id = pg.presensi_ms_unit_detail_id
-            LEFT JOIN sdi.ms_unit mu ON mu.id = pmud.ms_unit_id
+                pg.unit_id,
+                pg.shift_id,
+                s.nama AS nama_shift,
+                u.nama AS nama_lokasi_presensi,
+                u.lokasi AS lokasi_presensi
+            FROM pegawai pg
+            LEFT JOIN shift s ON s.id = pg.shift_id
+            LEFT JOIN shift_detail sd ON sd.id = pg.shift_id
+            LEFT JOIN unit u ON u.id = pg.unit_id
             WHERE (
-                pg.id_unit = (
+                pg.unit_id = (
                     SELECT id
                     FROM parent_cte
                     WHERE id_parent IS NULL
@@ -2247,11 +2202,9 @@ class PresensiService
                 )
                 $additionalCondition
             )
-            AND pg.id_status_pegawai NOT IN (3, 4)
         ";
 
-        $pegawais = DB::connection('mysql_sdi')->select($rawSql, ['unitId' => $unitIds]);
-
+        $pegawais = collect(DB::select($rawSql, ['unitId' => $unitIds]));
 
 
         $no = 1;
@@ -2263,7 +2216,7 @@ class PresensiService
 
         foreach ($pegawais as $pegawai) {
             // $unitDetail = $pegawai->unitDetailPresensi;
-            $unitDetailName = $pegawai->nama_unit;
+            $unitDetailnama = $pegawai->nama_unit;
             $unitId = $pegawai->unit_id_presensi;
 
             $unitDetailIdForLibur = $pegawai->presensi_ms_unit_detail_id;
@@ -2271,7 +2224,7 @@ class PresensiService
             $nominalLaukPauk = 0;
             $laukPaukUnit = null;
             if ($unitIds) {
-                $laukPaukUnit = \App\Models\LaukPaukUnit::where('unit_id', $unitIds)->first();
+                $laukPaukUnit = LaukPaukUnit::where('unit_id', $unitIds)->first();
                 $nominalLaukPauk = $laukPaukUnit ? $laukPaukUnit->nominal : 0;
             }
 
@@ -2295,28 +2248,28 @@ class PresensiService
             $nik = $pegawai->orang?->no_ktp ?? $pegawai->no_ktp ?? null;
             $presensi = collect();
             if ($nik) {
-                $presensi = \App\Models\Presensi::where('no_ktp', $nik)
+                $presensi = Presensi::where('no_ktp', $nik)
                     ->whereBetween('waktu_masuk', [$start->toDateString() . ' 00:00:00', $end->toDateString() . ' 23:59:59'])
                     ->get();
             }
             // echo json_encode($presensi);
             // exit();
 
-            $izin = \App\Models\PengajuanIzin::where('pegawai_id', $pegawai->id)
+            $izin = PengajuanIzin::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
                         ->orWhereBetween('tanggal_selesai', [$start, $end]);
                 })->get();
 
-            $cuti = \App\Models\PengajuanCuti::where('pegawai_id', $pegawai->id)
+            $cuti = PengajuanCuti::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
                         ->orWhereBetween('tanggal_selesai', [$start, $end]);
                 })->get();
 
-            $sakit = \App\Models\PengajuanSakit::where('pegawai_id', $pegawai->id)
+            $sakit = PengajuanSakit::where('pegawai_id', $pegawai->id)
                 ->where('status', 'diterima')
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('tanggal_mulai', [$start, $end])
@@ -2466,7 +2419,7 @@ class PresensiService
      */
     public function integratePengajuanToPresensi($pegawai_id, $jenis_pengajuan, $tanggal_mulai, $tanggal_selesai, $keterangan = null)
     {
-        $pegawai = \App\Models\Pegawai::with(['orang', 'shiftDetail'])->find($pegawai_id);
+        $pegawai = Pegawai::with(['orang', 'shiftDetail'])->find($pegawai_id);
         if (!$pegawai) {
             return false;
         }
@@ -2493,20 +2446,8 @@ class PresensiService
             // Skip weekend dan hari libur sesuai request
             $isWeekend = $date->isSaturday() || $date->isSunday();
             
-            // Ambil unit_id_presensi dari DB sdi.v_pegawai untuk konsistensi logic hari libur
-            $pegawaiData = DB::connection('mysql_sdi')
-                ->table('sdi.v_pegawai')
-                ->where('id', $pegawai_id)
-                ->select([
-                    DB::raw('CASE 
-                                WHEN terbantukan = 1 THEN 1
-                                ELSE id_unit
-                             END as unit_effective')
-                ])
-                ->first();
-
-            $unitEffective = $pegawaiData ? $pegawaiData->unit_effective : $pegawai->id_unit;
-            $isHariLibur = \App\Models\HariLibur::isHariLibur($unitEffective, $tanggal);
+            $unitEffective = $pegawai->unit_id;
+            $isHariLibur = HariLibur::isHariLibur($unitEffective, $tanggal);
 
             if ($isWeekend || $isHariLibur) {
                 continue;
@@ -2521,7 +2462,7 @@ class PresensiService
             $waktuMasuk = $waktuMasukStr ? $date->copy()->setTimeFromTimeString($waktuMasukStr) : $date->copy()->setTime(8, 0, 0);
             $waktuPulang = $waktuPulangStr ? $date->copy()->setTimeFromTimeString($waktuPulangStr) : null;
 
-            $existingPresensi = \App\Models\Presensi::where('no_ktp', $pegawai->orang->no_ktp)
+            $existingPresensi = Presensi::where('no_ktp', $pegawai->no_ktp)
                 ->whereDate('waktu_masuk', $tanggal)
                 ->first();
 
@@ -2550,7 +2491,7 @@ class PresensiService
      */
     public function removePengajuanFromPresensi($pegawai_id, $jenis_pengajuan, $tanggal_mulai, $tanggal_selesai)
     {
-        $pegawai = \App\Models\Pegawai::find($pegawai_id);
+        $pegawai = Pegawai::find($pegawai_id);
         if (!$pegawai) {
             return false;
         }
@@ -2577,11 +2518,9 @@ class PresensiService
     public function getLaporanKehadiranKaryawan(Request $request, $pegawai_id)
     {
         Carbon::setLocale('id');
-        $idRealPegawai = DB::connection('mysql_sdi')->table('sdi.v_pegawai')->where('id_orang', $pegawai_id)->value('id');
-        $pegawai = Pegawai::with('orang')->where('id', $idRealPegawai)->firstOrFail();
+        $pegawai = Pegawai::findOrFail($pegawai_id);
 
-
-        $noKtp   = $pegawai->orang->no_ktp;
+        $noKtp   = $pegawai->no_ktp;
 
         $bulan = $request->get('bulan', now()->month);
         $tahun = $request->get('tahun', now()->year);
@@ -2600,7 +2539,7 @@ class PresensiService
                 ? Carbon::parse($p->waktu_masuk)->toDateString()
                 : Carbon::parse($p->waktu_pulang)->toDateString();
 
-            $shiftDetail = ShiftDetail::find($pegawai->presensi_shift_detail_id);
+            $shiftDetail = ShiftDetail::find($pegawai->shift_id);
 
             $hari = strtolower(Carbon::parse($tanggalPresensi)->locale('id')->isoFormat('dddd'));
 
@@ -2679,30 +2618,13 @@ class PresensiService
                 'alasan' => $p->keterangan_masuk ?: ($p->keterangan_pulang ?: ''),
             ];
         }
-        $upk = DB::connection('mysql_sdi')->selectOne("
-                SELECT 
-                    CASE
-                        WHEN oyg.id IS NOT NULL
-                        AND oyg.aktif = 1 THEN oy.nama
-                        ELSE upk.nama
-                    END AS upk
-                FROM ms_pegawai
-                LEFT JOIN ms_unit upk ON ms_pegawai.id_upk = upk.id
-                LEFT JOIN organ_yayasan_anggota oyg ON oyg.id_orang = ms_pegawai.id_orang
-                LEFT JOIN organ_yayasan_jabatan oyj ON oyj.id = oyg.id_organ_jabatan
-                LEFT JOIN organ_yayasan oy ON oy.id = oyj.id_organ
-                WHERE ms_pegawai.id_orang = ?
-                LIMIT 1
-            ", [$pegawai->id_orang]);
-
-        $upkName = $upk ? $upk->upk : null;
 
         return response()->json([
             'pegawai' => [
                 'no_ktp' => $pegawai->orang->no_ktp,
                 'nama' => $pegawai->orang->nama,
-                'unit_kerja' => $pegawai->unit ? $pegawai->unit->nama : null,
-                'jabatan' => $upkName,
+                'unit_kerja' => $pegawai->unit ? $pegawai->unit->nama : "",
+                'jabatan' => $pegawai->jabatan ?? "",
             ],
             'periode' => [
                 'bulan' => $bulan,
@@ -2729,7 +2651,7 @@ class PresensiService
         $tahun = $request->query('tahun');
 
         $pegawais = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
-            $q->where('id_unit', $unitId);
+            $q->where('unit_id', $unitId);
         })
             ->whereHas('orang.presensi', function ($q) use ($bulan, $tahun) {
                 if ($bulan) $q->whereMonth('waktu_pulang', $bulan);
@@ -2756,7 +2678,7 @@ class PresensiService
 
             $lauk = null;
             if ($unitIdForLauk) {
-                $lauk = \App\Models\LaukPaukUnit::where('unit_id', $unitIdForLauk)->first();
+                $lauk = LaukPaukUnit::where('unit_id', $unitIdForLauk)->first();
             }
 
             foreach ($pegawai->orang->presensi as $p) {
@@ -2794,10 +2716,10 @@ class PresensiService
                 }
 
                 $result->push([
-                    'no_ktp' => $pegawai->orang->no_ktp,
-                    'nama' => $pegawai->orang->nama,
+                    'no_ktp' => $pegawai->no_ktp,
+                    'nama' => $pegawai->nama,
                     'jabatan' => $pegawai->profesi,
-                    'unit_detail' => $pegawai->unitDetailPresensi->unit->nama ?? null,
+                    'unit' => $pegawai->unit->nama_unit ?? null,
                     'tanggal' => $waktuPulang->format('Y-m-d'),
                     'waktu_masuk' => $p->waktu_masuk ? \Carbon\Carbon::parse($p->waktu_masuk)->format('H:i') : null,
                     'waktu_pulang' => $waktuPulang->format('H:i'),
@@ -2883,12 +2805,12 @@ class PresensiService
                     ]);
 
                     $createdPresensi[] = [
-                        'pegawai' => $pegawai->orang->nama,
+                        'pegawai' => $pegawai->nama,
                         'tanggal' => $tanggal,
                         'presensi_id' => $presensi->id,
                     ];
                 } catch (\Exception $e) {
-                    $errors[] = "Gagal membuat presensi untuk pegawai {$pegawai->orang->nama} pada tanggal {$tanggal}: " . $e->getMessage();
+                    $errors[] = "Gagal membuat presensi untuk pegawai {$pegawai->nama} pada tanggal {$tanggal}: " . $e->getMessage();
                 }
             }
         }
@@ -2974,7 +2896,7 @@ class PresensiService
         //     ]);
         // }
 
-        $unitId = $pegawai->pegawai->id_unit;
+        $unitId = $pegawai->pegawai->unit_id;
 
         $pegawaiSummary = DB::connection('mysql_sdi')->selectOne("
             SELECT 
@@ -2982,14 +2904,14 @@ class PresensiService
                 SUM(CASE WHEN pg.id_status_pegawai = 3 THEN 1 ELSE 0 END) AS jumlah_kontrak,
                 SUM(CASE WHEN pg.id_status_pegawai NOT IN (2, 3) OR pg.id_status_pegawai IS NULL THEN 1 ELSE 0 END) AS jumlah_lain
             FROM v_pegawai pg 
-            WHERE pg.id_unit = '$unitId'
+            WHERE pg.unit_id = '$unitId'
         ");
 
 
         $presensi = DB::connection('mysql')->table('presensi as pr')
             ->join('sdi.ms_orang as o', 'o.no_ktp', '=', 'pr.no_ktp')
             ->join('sdi.ms_pegawai as pg', 'pg.id_orang', '=', 'o.id')
-            ->where('pg.id_unit', $unitId)
+            ->where('pg.unit_id', $unitId)
             ->whereDate('pr.created_at', now()->toDateString())
             ->count();
 
@@ -2999,7 +2921,7 @@ class PresensiService
 
         return response()->json([
             'id_kepala_unit' => $pegawai->id,
-            'id_unit' => $unitId,
+            'unit_id' => $unitId,
             'jumlah_tetap' => $pegawaiSummary->jumlah_tetap ?? 0,
             'jumlah_kontrak' => $pegawaiSummary->jumlah_kontrak ?? 0,
             'jumlah_lain' => $pegawaiSummary->jumlah_lain ?? 0,
@@ -3030,12 +2952,12 @@ class PresensiService
         //     ]);
         // }
 
-        $unitId = $pegawai->pegawai->id_unit;
+        $unitId = $pegawai->pegawai->unit_id;
 
         $tanggal = $request->query('tanggal', Carbon::today()->toDateString());
 
         $pegawais = Pegawai::whereHas('unitDetailPresensi', function ($q) use ($unitId) {
-            $q->where('id_unit', $unitId);
+            $q->where('unit_id', $unitId);
         })
             ->with('orang:id,no_ktp,nama')
             ->get(['id', 'id_orang']);
@@ -3106,15 +3028,15 @@ class PresensiService
         //     ]);
         // }
 
-        $unitId = $pegawai->pegawai->id_unit;
+        $unitId = $pegawai->pegawai->unit_id;
         $tanggal = $request->query('tanggal'); // format YYYY-MM-DD
         $bulan   = $request->query('bulan');   // format YYYY-MM
 
-        $pegawais = \App\Models\Pegawai::where('id_unit', $unitId)
+        $pegawais = Pegawai::where('unit_id', $unitId)
             ->whereNotNull('id_orang')
             ->whereHas('orang')
             ->with('orang:id,no_ktp,nama')
-            ->get(['id', 'id_orang', 'id_unit']);
+            ->get(['id', 'id_orang', 'unit_id']);
 
         $noKtps = $pegawais
             ->pluck('orang.no_ktp')
@@ -3173,26 +3095,26 @@ class PresensiService
                 ]
             ];
 
-            $presensis = \App\Models\Presensi::whereIn('no_ktp', $noKtps)
+            $presensis = Presensi::whereIn('no_ktp', $noKtps)
                 ->whereBetween('waktu_masuk', [
                     \Carbon\Carbon::parse($tanggal)->startOfDay(),
                     \Carbon\Carbon::parse($tanggal)->endOfDay()
                 ])
                 ->get();
 
-            $izin = \App\Models\PengajuanIzin::whereIn('pegawai_id', $pegawais->pluck('id'))
+            $izin = PengajuanIzin::whereIn('pegawai_id', $pegawais->pluck('id'))
                 ->where('status', 'diterima')
                 ->whereDate('tanggal_mulai', '<=', $tanggal)
                 ->whereDate('tanggal_selesai', '>=', $tanggal)
                 ->get();
 
-            $cuti = \App\Models\PengajuanCuti::whereIn('pegawai_id', $pegawais->pluck('id'))
+            $cuti = PengajuanCuti::whereIn('pegawai_id', $pegawais->pluck('id'))
                 ->where('status', 'diterima')
                 ->whereDate('tanggal_mulai', '<=', $tanggal)
                 ->whereDate('tanggal_selesai', '>=', $tanggal)
                 ->get();
 
-            $sakit = \App\Models\PengajuanSakit::whereIn('pegawai_id', $pegawais->pluck('id'))
+            $sakit = PengajuanSakit::whereIn('pegawai_id', $pegawais->pluck('id'))
                 ->where('status', 'diterima')
                 ->whereDate('tanggal_mulai', '<=', $tanggal)
                 ->whereDate('tanggal_selesai', '>=', $tanggal)
@@ -3324,12 +3246,12 @@ class PresensiService
 
         $encoded = substr($authHeader, 6);
         $decoded = base64_decode($encoded);
-        [$username, $password] = explode(':', $decoded) + [null, null];
+        [$usernama, $password] = explode(':', $decoded) + [null, null];
 
-        $validUsername = 'presensi_ybwsa';
+        $validUsernama = 'presensi_ybwsa';
         $validPassword = 'presensiXyz#230!';
 
-        if ($username !== $validUsername || $password !== $validPassword) {
+        if ($usernama !== $validUsernama || $password !== $validPassword) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 

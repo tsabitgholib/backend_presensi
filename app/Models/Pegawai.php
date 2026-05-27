@@ -18,7 +18,8 @@ class Pegawai extends Model
         'unit_id',
         'shift_id',
         'profesi',
-        'status'
+        'status',
+        'status_lain'
     ];
 
     public function unit()

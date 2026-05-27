@@ -75,7 +75,7 @@ class EventController extends Controller
         $request->validate([
             'events_id' => 'required',
             'pegawai_ids' => 'required|array',
-            'pegawai_ids.*' => 'exists:mysql_sdi.ms_orang,id',
+            'pegawai_ids.*' => 'exists:pegawai,id',
                 ]);
 
         return $this->eventService->addPegawaiToEvent($request);
@@ -86,7 +86,7 @@ class EventController extends Controller
         $request->validate([
             'events_id' => 'required',
             'pegawai_ids' => 'required|array',
-            'pegawai_ids.*' => 'exists:mysql_sdi.ms_orang,id',
+            'pegawai_ids.*' => 'exists:pegawai,id',
                 ]);
 
         return $this->eventService->removePegawaiFromEvent($request);

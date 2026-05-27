@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Helpers\AdminUnitHelper;
 use App\Models\Event;
 use App\Models\PresensiEvent;
+use App\Models\Pegawai;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,7 +28,7 @@ class EventService
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $events = Event::where('ms_unit_id', $unitId)
+            $events = Event::where('unit_id', $unitId)
                 ->where(function ($query) use ($search) {
                     $query->where('nama_event', 'like', "%$search%")
                         ->orWhere('deskripsi', 'like', "%$search%")
@@ -43,10 +44,10 @@ class EventService
             return response()->json($events, 200);
         }
         if ($active === null) {
-            $events = Event::where('ms_unit_id', $unitId)
+            $events = Event::where('unit_id', $unitId)
                 ->get();
         } else {
-            $events = Event::where('ms_unit_id', $unitId)
+            $events = Event::where('unit_id', $unitId)
                 ->where('is_active', $active)
                 ->get();
         }
@@ -91,7 +92,7 @@ class EventService
         }
 
         $event = Event::create([
-            'ms_unit_id' => $unitId,
+            'unit_id' => $unitId,
             'nama_event' => $request->nama_event ?? 'Event ' . date('Y-m-d H:i:s'),
             'deskripsi' => $request->deskripsi ?? $request->nama_event,
             'tipe_event' => $request->tipe_event,
@@ -210,13 +211,9 @@ class EventService
             return response()->json(['message' => 'Admin tidak ditemukan'], 401);
         }
         
-
         $now = now();
 
-        $pegawaiIdAsli = DB::select("SELECT id FROM sdi.v_pegawai WHERE id_orang IN (" . implode(',', $request->pegawai_ids) . ")");
-        $pegawaiIdAsli = collect($pegawaiIdAsli)->pluck('id')->toArray();
-
-        $data = collect($pegawaiIdAsli)->map(fn($id) => [
+        $data = collect($request->pegawai_ids)->map(fn($id) => [
             'events_id' => $request->events_id,
             'pegawai_id' => $id,
             'created_at' => $now,
@@ -260,7 +257,6 @@ class EventService
             return response()->json(['message' => 'Event tidak ditemukan'], 404);
         }
 
-
         $pegawaiIds = DB::table('events_pegawai')
             ->where('events_id', $eventId)
             ->pluck('pegawai_id');
@@ -271,25 +267,12 @@ class EventService
             ], 200);
         }
 
+        $pegawaiList = Pegawai::whereIn('id', $pegawaiIds)
+            ->select('id', 'nama as nama_lengkap', 'no_ktp')
+            ->orderBy('id', 'asc')
+            ->get();
 
-        $pegawaiList = DB::select("
-            SELECT 
-                p.id,
-                TRIM(
-                    CONCAT_WS(' ',
-                        p.gelar_depan,
-                        p.nama,
-                        p.gelar_belakang
-                    )
-                ) AS nama_lengkap,
-                p.no_ktp
-            FROM sdi.v_pegawai p
-            WHERE p.id IN (" . implode(',', $pegawaiIds->toArray()) . ")
-            ORDER BY p.id ASC
-        ");
-
-
-        if (empty($pegawaiList)) {
+        if ($pegawaiList->isEmpty()) {
             return response()->json(['message' => 'Tidak ada pegawai yang terdaftar pada event ini'], 404);
         }
 
@@ -316,10 +299,12 @@ class EventService
         $tipeEvent = $request->query('tipe_event');
         $eventId = $request->query('events_id');
 
-        $historyQuery = PresensiEvent::with('event:id,nama_event,ms_unit_id,tipe_event,waktu_mulai,waktu_masuk_mulai,waktu_masuk_selesai,waktu_pulang_mulai,waktu_pulang_selesai')
+        $historyQuery = PresensiEvent::with([
+                'event:id,nama_event,unit_id,tipe_event,waktu_mulai,waktu_masuk_mulai,waktu_masuk_selesai,waktu_pulang_mulai,waktu_pulang_selesai',
+                'pegawai:id,nama,no_ktp'
+            ])
             ->join('events', 'presensi_event.events_id', '=', 'events.id')
-            ->join('sdi.v_pegawai as p', 'p.no_ktp', '=', 'presensi_event.no_ktp')
-            ->where('events.ms_unit_id', $unitId);
+            ->where('events.unit_id', $unitId);
 
         if ($eventId) {
             $historyQuery->where('presensi_event.events_id', $eventId);
@@ -335,12 +320,7 @@ class EventService
 
         $history = $historyQuery
             ->orderBy('presensi_event.created_at', 'desc')
-            ->select(
-                'presensi_event.*',
-                'p.gelar_depan',
-                'p.nama',
-                'p.gelar_belakang'
-            )
+            ->select('presensi_event.*')
             ->get();
 
         $formatted = $history->map(function ($item) {
@@ -361,11 +341,7 @@ class EventService
                 $eventData['waktu_mulai'] = $event->waktu_mulai;
             }
 
-            $namaLengkap = trim(
-                ($item->gelar_depan ? $item->gelar_depan . ' ' : '') .
-                $item->nama .
-                ($item->gelar_belakang ? ' ' . $item->gelar_belakang : '')
-            );
+            $namaLengkap = $item->pegawai?->nama ?? '';
 
             return [
                 'id' => $item->id,
@@ -409,9 +385,7 @@ class EventService
         $tanggalMulai = $request->input('tanggal_mulai');
         $tanggalSelesai = $request->input('tanggal_selesai');
 
-        $pegawai = DB::connection('mysql_sdi')->table('v_pegawai')
-            ->where('id_orang', $pegawaiId)
-            ->first();
+        $pegawai = Pegawai::find($pegawaiId);
 
         if (!$pegawai) {
             return response()->json(['message' => 'Pegawai tidak ditemukan'], 404);
@@ -425,7 +399,7 @@ class EventService
 
         $events = DB::table('events')
             ->whereIn('id', $eventIds)
-            ->where('ms_unit_id', $unitId)
+            ->where('unit_id', $unitId)
             ->select('id', 'nama_event', 'tanggal_mulai', 'tanggal_selesai')
             ->get()
             ->keyBy('id');

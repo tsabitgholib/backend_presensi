@@ -106,7 +106,7 @@ class PresensiController extends Controller
             'tanggal' => 'required|date',
             'keterangan' => 'nullable|string|max:255',
             'pegawai_ids' => 'required|array',
-            'pegawai_ids.*' => 'exists:mysql_sdi.ms_pegawai,id',
+            'pegawai_ids.*' => 'exists:pegawai,id',
                 ]);
 
         return $this->presensiService->adminPresensiPegawai($request);

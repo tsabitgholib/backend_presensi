@@ -50,38 +50,28 @@ class TidakAbsenService
 
 
         $today = Carbon::now('Asia/Jakarta')->toDateString();
-        // echo "Today: $today";
-        // exit();
-    //    $today = "2026-02-24";
 
-
-        $pegawaiTidakAbsen = DB::connection('mysql')
-            ->table('sdi.v_pegawai as p')
-            ->leftJoin('sdi_presensi.shift_detail as sd', 'sd.id', '=', 'p.presensi_shift_detail_id')
-            ->leftJoin('sdi_presensi.shift as s', 's.id', '=', 'sd.shift_id')
-            ->leftJoin('sdi_presensi.presensi as pr', function ($join) use ($today) {
-                $join->on('pr.no_ktp', '=', 'p.no_ktp')
+        $pegawaiTidakAbsen = \App\Models\Pegawai::with(['shift' => function ($query) {
+                $query->with('details');
+            }])
+            ->leftJoin('presensi as pr', function ($join) use ($today) {
+                $join->on('pr.no_ktp', '=', 'pegawai.no_ktp')
                     ->whereDate('pr.waktu_masuk', $today);
             })
-            ->whereNotNull('p.presensi_ms_unit_detail_id')
-            ->whereNotNull('p.presensi_shift_detail_id')
-            ->where('p.id_status_aktif', 1)
+            ->whereNotNull('pegawai.unit_id')
+            ->whereNotNull('pegawai.shift_id')
+            ->where('pegawai.status', 'aktif')
             ->whereNull('pr.no_ktp')
             ->select([
-                'p.id as pegawai_id',
-                'p.no_ktp',
-                's.id as shift_id',
-                'sd.id as shift_detail_id',
-                DB::raw('CASE 
-                            WHEN p.terbantukan = 1 THEN 1
-                            ELSE p.id_unit
-                         END as unit_effective')
+                'pegawai.id as pegawai_id',
+                'pegawai.no_ktp',
+                'pegawai.shift_id',
+                'pegawai.unit_id as unit_effective'
             ])
             ->get();
 
-
         $hariLiburToday = \App\Models\HariLibur::whereDate('tanggal', $today)
-            ->pluck('unit_detail_id')
+            ->pluck('unit_id')
             ->toArray();
 
         $hariLiburUnits = array_flip($hariLiburToday);
@@ -133,7 +123,6 @@ class TidakAbsenService
             Presensi::create([
                 'no_ktp' => $p->no_ktp,
                 'shift_id' => $p->shift_id,
-                'shift_detail_id' => $p->shift_detail_id,
 
                 'status_presensi' => $statusPresensi,
                 'status_masuk'  => $statusPresensi,

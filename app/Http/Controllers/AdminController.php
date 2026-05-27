@@ -43,7 +43,7 @@ class AdminController extends Controller
             'password' => 'required|min:6',
             'status' => 'required|in:aktif,nonaktif',
             'unit_ids' => 'required|array|min:1',
-            'unit_ids.*' => 'exists:mysql_sdi.ms_unit,id',
+            'unit_ids.*' => 'exists:unit,id',
                 ]);
 
         return $this->adminService->storeMonitoring($request);
@@ -56,7 +56,7 @@ class AdminController extends Controller
             'email' => 'sometimes|required|email|unique:admin,email,' . $id,
             'password' => 'nullable|min:6',
             'role' => 'sometimes|required|in:super_admin,admin_unit',
-            'unit_id' => 'nullable|exists:mysql_sdi.ms_unit,id',
+            'unit_id' => 'nullable|exists:unit,id',
             'status' => 'sometimes|required|in:aktif,nonaktif',
                 ]);
 
@@ -71,7 +71,7 @@ class AdminController extends Controller
             'password' => 'nullable|min:6',
             'status' => 'sometimes|required|in:aktif,nonaktif',
             'unit_ids' => 'sometimes|array',
-            'unit_ids.*' => 'exists:mysql_sdi.ms_unit,id',
+            'unit_ids.*' => 'exists:unit,id',
                 ]);
 
         return $this->adminService->updateMonitoring($request, $id);

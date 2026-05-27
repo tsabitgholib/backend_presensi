@@ -31,4 +31,9 @@ class PresensiEvent extends Model
     {
         return $this->belongsTo(Event::class, 'events_id');
     }
+
+    public function pegawai()
+    {
+        return $this->belongsTo(Pegawai::class, 'no_ktp', 'no_ktp');
+    }
 }

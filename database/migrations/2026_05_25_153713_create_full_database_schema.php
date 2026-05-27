@@ -45,6 +45,7 @@ return new class extends Migration
             $table->unsignedBigInteger('shift_id')->nullable();
             $table->string('profesi')->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
+            $table->string('status_lain')->nullable();
             $table->timestamps();
             
             $table->foreign('shift_id')->references('id')->on('shift')->onDelete('set null');
