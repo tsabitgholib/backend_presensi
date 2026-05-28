@@ -1506,7 +1506,6 @@ class PresensiService
         $from = $request->query('from');
         $to = $request->query('to');
 
-        // Query menggunakan model Pegawai, bukan sdi.v_pegawai
         $pegawaiQuery = Pegawai::with('unit')
             ->where('unit_id', $unitId);
 
@@ -2896,21 +2895,21 @@ class PresensiService
         //     ]);
         // }
 
-        $unitId = $pegawai->pegawai->unit_id;
+        $unitId = $pegawai->unit_id;
 
-        $pegawaiSummary = DB::connection('mysql_sdi')->selectOne("
+        $pegawaiSummary = DB::select("
             SELECT 
-                SUM(CASE WHEN pg.id_status_pegawai = 2 THEN 1 ELSE 0 END) AS jumlah_tetap,
-                SUM(CASE WHEN pg.id_status_pegawai = 3 THEN 1 ELSE 0 END) AS jumlah_kontrak,
-                SUM(CASE WHEN pg.id_status_pegawai NOT IN (2, 3) OR pg.id_status_pegawai IS NULL THEN 1 ELSE 0 END) AS jumlah_lain
-            FROM v_pegawai pg 
+                SUM(CASE WHEN pg.status_lain = 'tetap' THEN 1 ELSE 0 END) AS jumlah_tetap,
+                SUM(CASE WHEN pg.status_lain = 'kontrak' THEN 1 ELSE 0 END) AS jumlah_kontrak,
+                SUM(CASE WHEN pg.status_lain NOT IN ('tetap', 'kontrak') OR pg.status_lain IS NULL THEN 1 ELSE 0 END) AS jumlah_lain
+            FROM pegawai pg 
             WHERE pg.unit_id = '$unitId'
         ");
 
 
-        $presensi = DB::connection('mysql')->table('presensi as pr')
-            ->join('sdi.ms_orang as o', 'o.no_ktp', '=', 'pr.no_ktp')
-            ->join('sdi.ms_pegawai as pg', 'pg.id_orang', '=', 'o.id')
+
+        $presensi = DB::table('presensi as pr')
+            ->join('pegawai as pg', 'pg.id', '=', 'pr.pegawai_id')
             ->where('pg.unit_id', $unitId)
             ->whereDate('pr.created_at', now()->toDateString())
             ->count();

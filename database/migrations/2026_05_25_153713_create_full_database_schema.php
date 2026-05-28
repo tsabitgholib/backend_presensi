@@ -21,7 +21,16 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 2. Admin Table
+        // 2. Shift Table
+        Schema::create('shift', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama');
+            $table->unsignedBigInteger('unit_id');
+            $table->timestamps();
+            $table->index('unit_id', 'shift_unit_id_foreign');
+        });
+
+        // 3. Admin Table
         Schema::create('admin', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -35,7 +44,7 @@ return new class extends Migration
             $table->index('unit_id', 'admin_unit_id_foreign');
         });
 
-        // 3. Pegawai Table (Base entity)
+        // 4. Pegawai Table (Base entity)
         Schema::create('pegawai', function (Blueprint $table) {
             $table->increments('id');
             $table->string('nama')->nullable();
@@ -52,7 +61,7 @@ return new class extends Migration
             $table->foreign('unit_id')->references('id')->on('unit')->onDelete('set null');
         });
 
-        // 4. Cuti, Izin, Sakit Tables
+        // 5. Cuti, Izin, Sakit Tables
         Schema::create('cuti', function (Blueprint $table) {
             $table->id();
             $table->string('jenis');
@@ -71,7 +80,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 5. Events Table
+        // 6. Events Table
         Schema::create('events', function (Blueprint $table) {
             $table->increments('id'); // int(11)
             $table->integer('ms_unit_id');
@@ -93,15 +102,6 @@ return new class extends Migration
             $table->longText('lokasi2')->nullable();
             $table->longText('lokasi3')->nullable();
             $table->timestamps();
-        });
-
-        // 6. Shift Table
-        Schema::create('shift', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama');
-            $table->unsignedBigInteger('unit_id');
-            $table->timestamps();
-            $table->index('unit_id', 'shift_unit_id_foreign');
         });
 
         // 7. Events Pegawai Table
@@ -134,21 +134,7 @@ return new class extends Migration
             $table->index('unit_id', 'lauk_pauk_unit_unit_id_foreign');
         });
 
-        // 9. Personal Access Tokens
-        Schema::create('personal_access_tokens', function (Blueprint $table) {
-            $table->id();
-            $table->string('tokenable_type');
-            $table->unsignedBigInteger('tokenable_id');
-            $table->string('name');
-            $table->string('token', 64)->unique();
-            $table->text('abilities')->nullable();
-            $table->timestamp('last_used_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
-            $table->timestamps();
-            $table->index(['tokenable_type', 'tokenable_id'], 'personal_access_tokens_tokenable_type_tokenable_id_index');
-        });
-
-        // 10. Presensi Event Table
+        // 9. Presensi Event Table
         Schema::create('presensi_event', function (Blueprint $table) {
             $table->increments('id');
             $table->string('no_ktp', 50);
@@ -312,7 +298,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Drop dengan urutan terbalik dari penciptaan
         Schema::dropIfExists('admin_monitoring_units');
         Schema::dropIfExists('presensi');
         Schema::dropIfExists('shift_detail');
@@ -323,11 +308,10 @@ return new class extends Migration
         Schema::dropIfExists('user_device');
         Schema::dropIfExists('presensi_jadwal_dinas');
         Schema::dropIfExists('presensi_event');
-        Schema::dropIfExists('personal_access_tokens');
         Schema::dropIfExists('lauk_pauk_unit');
         Schema::dropIfExists('events_pegawai');
-        Schema::dropIfExists('shift');
         Schema::dropIfExists('events');
+        Schema::dropIfExists('shift');
         Schema::dropIfExists('sakit');
         Schema::dropIfExists('izin');
         Schema::dropIfExists('cuti');
