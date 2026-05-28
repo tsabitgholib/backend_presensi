@@ -14,7 +14,7 @@ class PengajuanCutiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'cuti_id' => 'required|exists:mysql.cuti,id',
+            'cuti_id' => 'required|exists:cuti,id',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'alasan' => 'required|string',

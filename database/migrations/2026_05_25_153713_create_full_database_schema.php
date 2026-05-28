@@ -155,7 +155,7 @@ return new class extends Migration
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
             $table->text('keterangan');
-            $table->longText('pegawai_ids');
+            $table->jsonb('pegawai_ids');
             $table->unsignedBigInteger('unit_id');
             $table->unsignedBigInteger('created_by');
             $table->tinyInteger('is_active')->default(1);

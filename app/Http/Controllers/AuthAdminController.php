@@ -16,7 +16,7 @@ class AuthAdminController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
-                ]);
+        ]);
 
         return $this->authAdminService->login($request);
     }

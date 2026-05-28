@@ -30,9 +30,9 @@ class EventService
             $search = $request->input('search');
             $events = Event::where('unit_id', $unitId)
                 ->where(function ($query) use ($search) {
-                    $query->where('nama_event', 'like', "%$search%")
-                        ->orWhere('deskripsi', 'like', "%$search%")
-                        ->orWhere('tipe_event', 'like', "%$search%");
+                    $query->where('nama_event', 'ilike', "%$search%")
+                        ->orWhere('deskripsi', 'ilike', "%$search%")
+                        ->orWhere('tipe_event', 'ilike', "%$search%");
                 });
             if ($active !== null) {
                 $events->where('is_active', $active);
@@ -429,12 +429,12 @@ class EventService
         $presensiRows = DB::table('presensi_event')
             ->where('no_ktp', $noKtp)
             ->whereIn('events_id', $events->keys())
-            ->whereBetween(DB::raw('DATE(created_at)'), [$tanggalMulai, $tanggalSelesai])
+            ->whereBetween(DB::raw('created_at::date'), [$tanggalMulai, $tanggalSelesai])
             ->whereNotIn('status_presensi', ['libur'])
             ->select(
                 'events_id',
                 'status_presensi',
-                DB::raw('DATE(created_at) as tanggal')
+                DB::raw('created_at::date as tanggal')
             )
             ->get();
 

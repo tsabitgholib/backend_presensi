@@ -22,6 +22,7 @@ class AuthPegawaiService
             'sub' => $pegawai->id,
             'no_ktp' => $pegawai->no_ktp,
             'role' => 'pegawai',
+            'tenant_schema' => env('CLIENT_SCHEMA'),
             'iat' => time(),
             'exp' => time() + 86400
         ];

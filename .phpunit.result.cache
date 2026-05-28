@@ -1,1 +1,1 @@
-{"version":1,"defects":[],"times":{"Tests\\Unit\\ExampleTest::test_that_true_is_true":0.007,"Tests\\Feature\\ExampleTest::test_the_application_returns_a_successful_response":0.059}}
+{"version":2,"defects":[],"times":{"Tests\\Feature\\AuthJWTTenantSchemaTest::test_resolve_tenant_schema_from_payload":0.016,"Tests\\Feature\\AuthJWTTenantSchemaTest::test_reject_invalid_tenant_schema_from_payload":0.001}}

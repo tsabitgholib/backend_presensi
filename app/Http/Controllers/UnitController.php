@@ -16,20 +16,25 @@ class UnitController extends Controller
         return $this->unitService->index();
     }
 
-    public function getUnit()
+    public function show($id)
     {
-        return $this->unitService->getUnit();
+        return $this->unitService->show($id);
     }
+
+    // public function getUnit()
+    // {
+    //     return $this->unitService->getUnit();
+    // }
 
     public function getUPK($unitId)
     {
         return $this->unitService->getUPK($unitId);
     }
 
-    public function getUnitsWithLocation(Request $request)
-    {
-        return $this->unitService->getUnitsWithLocation($request);
-    }
+    // public function getUnitsWithLocation(Request $request)
+    // {
+    //     return $this->unitService->getUnitsWithLocation($request);
+    // }
 
     public function store(Request $request)
     {
@@ -39,6 +44,17 @@ class UnitController extends Controller
     public function update(Request $request, $id)
     {
         return $this->unitService->update($request, $id);
+    }
+
+    public function assignPegawai(Request $request)
+    {
+        $request->validate([
+            'unit_id' => 'required|exists:unit,id',
+            'pegawai_ids' => 'required|array|min:1',
+            'pegawai_ids.*' => 'required|integer|distinct|exists:pegawai,id',
+        ]);
+
+        return $this->unitService->assignPegawai($request);
     }
 
     public function destroy($id)

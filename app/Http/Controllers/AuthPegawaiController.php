@@ -16,7 +16,7 @@ class AuthPegawaiController extends Controller
         $request->validate([
             'no_ktp' => 'required',
             'password' => 'required',
-                ]);
+        ]);
 
         return $this->authPegawaiService->login($request);
     }

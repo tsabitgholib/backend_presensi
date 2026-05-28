@@ -11,19 +11,19 @@ class AuthAdminService
 {
     public function login(Request $request)
     {
-        
-
         $admin = Admin::where('email', $request->email)->first();
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             return response()->json(['message' => 'Email atau password salah'], 401);
         }
 
+
         $payload = [
             'sub' => $admin->id,
             'email' => $admin->email,
             'role' => $admin->role,
+            'tenant_schema' => env('CLIENT_SCHEMA'),
             'iat' => time(),
-            'exp' => time() + (10 * 365 * 24 * 60 * 60) // 10 tahun
+            'exp' => time() + 86400
 
         ];
         $token = JWT::encode($payload, env('JWT_SECRET'));
@@ -45,6 +45,7 @@ class AuthAdminService
             'unit_id' => $admin->unit_id,
             'status' => $admin->status,
             'unit' => $admin->unit ?? null,
+            'tenant_schema' => env('CLIENT_SCHEMA')
         ]);
     }
 }

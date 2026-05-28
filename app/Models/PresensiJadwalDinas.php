@@ -33,7 +33,7 @@ class PresensiJadwalDinas extends Model
         return self::where('is_active', true)
             ->whereDate('tanggal_mulai', '<=', $tanggal)
             ->whereDate('tanggal_selesai', '>=', $tanggal)
-            ->whereRaw('JSON_CONTAINS(pegawai_ids, ?)', [$pegawaiId])
+            ->whereRaw('pegawai_ids::jsonb @> ?', [json_encode([(string) $pegawaiId])])
             ->first();
     }
 

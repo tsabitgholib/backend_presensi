@@ -9,50 +9,49 @@ class UnitSeeder extends Seeder
 {
     public function run(): void
     {
-        $units = [
+        $root = Unit::updateOrCreate(
+            ['alias' => 'YBW'],
             [
                 'nama_unit' => 'Yayasan Budi Warga',
-                'alias' => 'YBW',
                 'parent_id' => null,
                 'level' => 1,
                 'lokasi' => [
-                    ['lat' => -6.1750, 'lng' => 106.8250],
-                    ['lat' => -6.1760, 'lng' => 106.8260],
-                    ['lat' => -6.1770, 'lng' => 106.8250],
-                    ['lat' => -6.1760, 'lng' => 106.8240]
-                ]
-            ],
+                    [-6.1750, 106.8250],
+                    [-6.1760, 106.8260],
+                    [-6.1770, 106.8250],
+                    [-6.1760, 106.8240],
+                ],
+            ]
+        );
+
+        Unit::updateOrCreate(
+            ['alias' => 'SDN 1 Jakarta'],
             [
                 'nama_unit' => 'SD Negeri 1 Jakarta',
-                'alias' => 'SDN 1 Jakarta',
-                'parent_id' => 1,
+                'parent_id' => $root->id,
                 'level' => 2,
                 'lokasi' => [
-                    ['lat' => -6.2000, 'lng' => 106.8000],
-                    ['lat' => -6.2010, 'lng' => 106.8010],
-                    ['lat' => -6.2020, 'lng' => 106.8000],
-                    ['lat' => -6.2010, 'lng' => 106.7990]
-                ]
-            ],
+                    [-6.2000, 106.8000],
+                    [-6.2010, 106.8010],
+                    [-6.2020, 106.8000],
+                    [-6.2010, 106.7990],
+                ],
+            ]
+        );
+
+        Unit::updateOrCreate(
+            ['alias' => 'SMPN 1 Jakarta'],
             [
                 'nama_unit' => 'SMP Negeri 1 Jakarta',
-                'alias' => 'SMPN 1 Jakarta',
-                'parent_id' => 1,
+                'parent_id' => $root->id,
                 'level' => 2,
                 'lokasi' => [
-                    ['lat' => -6.2500, 'lng' => 106.8500],
-                    ['lat' => -6.2510, 'lng' => 106.8510],
-                    ['lat' => -6.2520, 'lng' => 106.8500],
-                    ['lat' => -6.2510, 'lng' => 106.8490]
-                ]
+                    [-6.2500, 106.8500],
+                    [-6.2510, 106.8510],
+                    [-6.2520, 106.8500],
+                    [-6.2510, 106.8490],
+                ],
             ]
-        ];
-
-        foreach ($units as $unit) {
-            Unit::firstOrCreate(
-                ['nama_unit' => $unit['nama_unit']],
-                $unit
-            );
-        }
+        );
     }
 }

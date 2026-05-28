@@ -13,7 +13,12 @@ DB_PORT=5432
 DB_DATABASE=nama_db_postgres
 DB_USERNAME=username_postgres
 DB_PASSWORD=password_postgres
+DB_SCHEMA=public
+TENANT_SCHEMA_WHITELIST=client_a,client_b
+TENANCY_FALLBACK_TO_DEFAULT=true
 ```
+
+`tenant_schema` dibaca dari JWT saat request dan dipakai untuk mengatur `search_path`.
 
 ## 2. Perubahan pada Query Mentah (Raw Queries)
 
@@ -72,6 +77,19 @@ Setelah melakukan perubahan di atas, jalankan ulang migrasi:
 ```bash
 php artisan migrate:fresh --seed
 ```
+
+## 6. Provisioning Schema Tenant Baru
+
+Untuk onboarding client baru dalam database yang sama:
+
+```bash
+php scripts/provision-tenant-schema.php client_a --seed
+```
+
+Script akan:
+- Membuat schema jika belum ada
+- Set `search_path` ke `<tenant_schema>,public`
+- Menjalankan migration (dan seed jika `--seed`)
 
 ---
 *Dibuat oleh Gemini CLI pada 28 Mei 2026*

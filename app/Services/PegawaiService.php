@@ -312,18 +312,17 @@ class PegawaiService
             return response()->json(['message' => 'Admin tidak ditemukan'], 401);
         }
 
-        $request->validate([
-            'nama' => 'required|string',
-            'no_ktp' => 'required|string|unique:pegawai,no_ktp',
-            'nip_unit' => 'nullable|string',
-            'unit_id' => 'required|exists:unit,id',
-            'shift_id' => 'nullable|exists:shift,id',
-            'profesi' => 'nullable|string',
-            'status' => 'nullable|in:aktif,nonaktif',
-        ]);
-
         try {
-            $pegawai = Pegawai::create($request->all());
+            $pegawai = Pegawai::create($request->only([
+                'nama',
+                'no_ktp',
+                'nip_unit',
+                'unit_id',
+                'shift_id',
+                'profesi',
+                'status',
+                'status_lain',
+            ]));
             return response()->json($pegawai, 201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 400);
@@ -351,18 +350,17 @@ class PegawaiService
             return response()->json(['message' => 'Pegawai tidak ditemukan'], 404);
         }
 
-        $request->validate([
-            'nama' => 'sometimes|required|string',
-            'no_ktp' => 'sometimes|required|string|unique:pegawai,no_ktp,' . $id,
-            'nip_unit' => 'nullable|string',
-            'unit_id' => 'sometimes|required|exists:unit,id',
-            'shift_id' => 'nullable|exists:shift,id',
-            'profesi' => 'nullable|string',
-            'status' => 'nullable|in:aktif,nonaktif',
-        ]);
-
         try {
-            $pegawai->update($request->all());
+            $pegawai->update($request->only([
+                'nama',
+                'no_ktp',
+                'nip_unit',
+                'unit_id',
+                'shift_id',
+                'profesi',
+                'status',
+                'status_lain',
+            ]));
             return response()->json($pegawai);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 400);

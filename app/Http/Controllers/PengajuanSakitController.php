@@ -14,7 +14,7 @@ class PengajuanSakitController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'sakit_id' => 'required|exists:mysql.sakit,id',
+            'sakit_id' => 'required|exists:sakit,id',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'alasan' => 'required|string',
