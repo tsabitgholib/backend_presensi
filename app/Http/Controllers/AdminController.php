@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\AdminService;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -25,10 +26,10 @@ class AdminController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'email' => 'required|email|unique:admin,email',
+            'email' => ['required', 'email', Rule::unique('admin', 'email')],
             'password' => 'required|min:6',
             'role' => 'required|in:super_admin,admin_unit',
-            'unit_id' => 'nullable|exists:unit,id',
+            'unit_id' => ['nullable', Rule::exists('unit', 'id')],
             'status' => 'required|in:aktif,nonaktif',
                 ]);
 
@@ -39,11 +40,11 @@ class AdminController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'email' => 'required|email|unique:admin,email',
+            'email' => ['required', 'email', Rule::unique('admin', 'email')],
             'password' => 'required|min:6',
             'status' => 'required|in:aktif,nonaktif',
             'unit_ids' => 'required|array|min:1',
-            'unit_ids.*' => 'exists:unit,id',
+            'unit_ids.*' => [Rule::exists('unit', 'id')],
                 ]);
 
         return $this->adminService->storeMonitoring($request);
@@ -53,10 +54,10 @@ class AdminController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|required',
-            'email' => 'sometimes|required|email|unique:admin,email,' . $id,
+            'email' => ['sometimes', 'required', 'email', Rule::unique('admin', 'email')->ignore($id)],
             'password' => 'nullable|min:6',
             'role' => 'sometimes|required|in:super_admin,admin_unit',
-            'unit_id' => 'nullable|exists:unit,id',
+            'unit_id' => ['nullable', Rule::exists('unit', 'id')],
             'status' => 'sometimes|required|in:aktif,nonaktif',
                 ]);
 
@@ -67,11 +68,11 @@ class AdminController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|required',
-            'email' => 'sometimes|required|email|unique:admin,email,' . $id,
+            'email' => ['sometimes', 'required', 'email', Rule::unique('admin', 'email')->ignore($id)],
             'password' => 'nullable|min:6',
             'status' => 'sometimes|required|in:aktif,nonaktif',
             'unit_ids' => 'sometimes|array',
-            'unit_ids.*' => 'exists:unit,id',
+            'unit_ids.*' => [Rule::exists('unit', 'id')],
                 ]);
 
         return $this->adminService->updateMonitoring($request, $id);

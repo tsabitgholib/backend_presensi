@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\PresensiEventService;
+use Illuminate\Validation\Rule;
 
 class PresensiEventController extends Controller
 {
@@ -14,7 +15,7 @@ class PresensiEventController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'events_id' => 'required|exists:events,id',
+            'events_id' => ['required', Rule::exists('events', 'id')],
             'lokasi' => 'required|array|min:2',
                 ]);
 

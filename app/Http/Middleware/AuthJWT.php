@@ -66,7 +66,7 @@ class AuthJWT
     {
         $defaultSchema = (string) config('tenancy.default_schema', 'public');
         $fallbackToDefault = (bool) config('tenancy.fallback_to_default_schema', true);
-        $envClientSchema = strtolower(trim((string) env('CLIENT_SCHEMA', '')));
+        $envClientSchema = strtolower(trim((string) env('DB_SCHEMA', '')));
 
         // Prioritaskan schema dari env untuk mode single-tenant per deployment.
         $candidate = $envClientSchema;

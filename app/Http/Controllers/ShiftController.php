@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AdminUnitHelper;
 use Illuminate\Http\Request;
 use App\Services\ShiftService;
+use Illuminate\Validation\Rule;
 
 class ShiftController extends Controller
 {
@@ -46,7 +47,7 @@ class ShiftController extends Controller
     public function storeShiftDetail(Request $request)
     {
         $request->validate([
-            'shift_id' => 'required|exists:shift,id',
+            'shift_id' => ['required', Rule::exists('shift', 'id')],
             'senin_masuk' => 'nullable|date_format:H:i',
             'senin_pulang' => 'nullable|date_format:H:i',
             'selasa_masuk' => 'nullable|date_format:H:i',
@@ -105,9 +106,9 @@ class ShiftController extends Controller
     public function assignPegawaiToShift(Request $request)
     {
         $request->validate([
-                'shift_id' => 'required|exists:shift,id',
+                'shift_id' => ['required', Rule::exists('shift', 'id')],
                 'pegawai_ids' => 'required|array',
-                'pegawai_ids.*' => 'exists:pegawai,id',
+                'pegawai_ids.*' => [Rule::exists('pegawai', 'id')],
             ]);
 
         return $this->shiftService->assignPegawaiToShift($request);

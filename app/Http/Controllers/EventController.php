@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\EventService;
+use Illuminate\Validation\Rule;
 
 class EventController extends Controller
 {
@@ -75,7 +76,7 @@ class EventController extends Controller
         $request->validate([
             'events_id' => 'required',
             'pegawai_ids' => 'required|array',
-            'pegawai_ids.*' => 'exists:pegawai,id',
+            'pegawai_ids.*' => [Rule::exists('pegawai', 'id')],
                 ]);
 
         return $this->eventService->addPegawaiToEvent($request);
@@ -86,7 +87,7 @@ class EventController extends Controller
         $request->validate([
             'events_id' => 'required',
             'pegawai_ids' => 'required|array',
-            'pegawai_ids.*' => 'exists:pegawai,id',
+            'pegawai_ids.*' => [Rule::exists('pegawai', 'id')],
                 ]);
 
         return $this->eventService->removePegawaiFromEvent($request);

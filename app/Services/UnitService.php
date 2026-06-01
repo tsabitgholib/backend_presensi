@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Unit;
 use App\Models\Pegawai;
 use App\Helpers\AdminUnitHelper;
+use Illuminate\Validation\Rule;
 
 class UnitService
 {
@@ -93,7 +94,7 @@ class UnitService
         $request->validate([
             'nama_unit' => 'required|string',
             'alias' => 'nullable|string',
-            'parent_id' => 'nullable|exists:unit,id',
+            'parent_id' => ['nullable', Rule::exists('unit', 'id')],
             'level' => 'required|integer',
             'lokasi' => 'nullable|array',
             'lokasi2' => 'nullable|array',
@@ -123,7 +124,7 @@ class UnitService
         $request->validate([
             'nama_unit' => 'sometimes|required|string',
             'alias' => 'nullable|string',
-            'parent_id' => 'nullable|exists:unit,id',
+            'parent_id' => ['nullable', Rule::exists('unit', 'id')],
             'level' => 'sometimes|required|integer',
             'lokasi' => 'nullable|array',
             'lokasi2' => 'nullable|array',
@@ -158,13 +159,13 @@ class UnitService
         }
     }
 
-    public function assignPegawai(Request $request)
+    public function addPegawaiTounit(Request $request)
     {
         $admin = $request->get('admin');
         if (!$admin) {
             return response()->json(['message' => 'Admin tidak ditemukan'], 401);
         }
-
+        
         $unitId = (int) $request->unit_id;
         $pegawaiIds = collect($request->pegawai_ids)
             ->map(fn ($id) => (int) $id)
@@ -172,13 +173,13 @@ class UnitService
             ->values();
 
         if ($admin->role === 'admin_unit' && (int) $admin->unit_id !== $unitId) {
-            return response()->json(['message' => 'Admin unit hanya boleh assign ke unit miliknya'], 403);
+            return response()->json(['message' => 'Admin unit hanya boleh menambahkan pegawai ke unit miliknya'], 403);
         }
 
         $updated = Pegawai::whereIn('id', $pegawaiIds)->update(['unit_id' => $unitId]);
 
         return response()->json([
-            'message' => 'Pegawai berhasil di-assign ke unit',
+            'message' => 'Berhasil menambahkan pegawai ke unit',
             'unit_id' => $unitId,
             'pegawai_ids' => $pegawaiIds,
             'total_requested' => $pegawaiIds->count(),

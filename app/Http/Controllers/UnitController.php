@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\UnitService;
+use Illuminate\Validation\Rule;
 
 class UnitController extends Controller
 {
@@ -26,10 +27,10 @@ class UnitController extends Controller
     //     return $this->unitService->getUnit();
     // }
 
-    public function getUPK($unitId)
-    {
-        return $this->unitService->getUPK($unitId);
-    }
+    // public function getUPK($unitId)
+    // {
+    //     return $this->unitService->getUPK($unitId);
+    // }
 
     // public function getUnitsWithLocation(Request $request)
     // {
@@ -46,15 +47,15 @@ class UnitController extends Controller
         return $this->unitService->update($request, $id);
     }
 
-    public function assignPegawai(Request $request)
+    public function addPegawaiTounit(Request $request)
     {
         $request->validate([
-            'unit_id' => 'required|exists:unit,id',
+            'unit_id' => ['required', Rule::exists('unit', 'id')],
             'pegawai_ids' => 'required|array|min:1',
-            'pegawai_ids.*' => 'required|integer|distinct|exists:pegawai,id',
+            'pegawai_ids.*' => ['required', 'integer', 'distinct', Rule::exists('pegawai', 'id')],
         ]);
 
-        return $this->unitService->assignPegawai($request);
+        return $this->unitService->addPegawaiTounit($request);
     }
 
     public function destroy($id)

@@ -45,4 +45,12 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    /**
+     * Determine if the exception handler should return a JSON response.
+     */
+    protected function shouldReturnJson($request, Throwable $e)
+    {
+        return $request->is('api/*') || parent::shouldReturnJson($request, $e);
+    }
 }

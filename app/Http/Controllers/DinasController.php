@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AdminUnitHelper;
 use Illuminate\Http\Request;
 use App\Services\DinasService;
+use Illuminate\Validation\Rule;
 
 class DinasController extends Controller
 {
@@ -22,7 +23,7 @@ class DinasController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'keterangan' => 'required|string|max:255',
             'pegawai_ids' => 'required|array',
-            'pegawai_ids.*' => 'exists:pegawai,id',
+            'pegawai_ids.*' => [Rule::exists('pegawai', 'id')],
                 ], $unitValidationRules));
 
         return $this->dinasService->store($request);
@@ -42,7 +43,7 @@ class DinasController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'keterangan'      => 'required|string|max:255',
             'pegawai_ids'     => 'required|array',
-            'pegawai_ids.*'   => 'exists:pegawai,id',
+            'pegawai_ids.*'   => [Rule::exists('pegawai', 'id')],
                 ], $unitValidationRules));
 
         return $this->dinasService->update($request, $id);

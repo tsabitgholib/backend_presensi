@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\PengajuanIzinService;
+use Illuminate\Validation\Rule;
 
 class PengajuanIzinController extends Controller
 {
@@ -14,7 +15,7 @@ class PengajuanIzinController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'izin_id' => 'required|exists:izin,id',
+            'izin_id' => ['required', Rule::exists('izin', 'id')],
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'alasan' => 'required|string',

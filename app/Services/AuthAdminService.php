@@ -21,7 +21,7 @@ class AuthAdminService
             'sub' => $admin->id,
             'email' => $admin->email,
             'role' => $admin->role,
-            'tenant_schema' => env('CLIENT_SCHEMA'),
+            'tenant_schema' => env('DB_SCHEMA'),
             'iat' => time(),
             'exp' => time() + 86400
 
@@ -45,7 +45,7 @@ class AuthAdminService
             'unit_id' => $admin->unit_id,
             'status' => $admin->status,
             'unit' => $admin->unit ?? null,
-            'tenant_schema' => env('CLIENT_SCHEMA')
+            'tenant_schema' => env('DB_SCHEMA')
         ]);
     }
 }

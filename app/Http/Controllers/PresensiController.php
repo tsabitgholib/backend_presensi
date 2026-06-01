@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\PresensiService;
+use Illuminate\Validation\Rule;
 
 class PresensiController extends Controller
 {
@@ -106,7 +107,7 @@ class PresensiController extends Controller
             'tanggal' => 'required|date',
             'keterangan' => 'nullable|string|max:255',
             'pegawai_ids' => 'required|array',
-            'pegawai_ids.*' => 'exists:pegawai,id',
+            'pegawai_ids.*' => [Rule::exists('pegawai', 'id')],
                 ]);
 
         return $this->presensiService->adminPresensiPegawai($request);

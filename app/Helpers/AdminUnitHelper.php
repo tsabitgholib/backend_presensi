@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AdminUnitHelper
 {
@@ -60,7 +61,7 @@ class AdminUnitHelper
         $admin = $request->get('admin');
         
         if ($admin && $admin->role === 'super_admin') {
-            return [$unitIdKey => 'required|exists:unit,id'];
+            return [$unitIdKey => ['required', Rule::exists('unit', 'id')]];
         }
         
         return [];

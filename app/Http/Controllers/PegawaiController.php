@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\PegawaiService;
+use Illuminate\Validation\Rule;
 
 class PegawaiController extends Controller
 {
@@ -40,10 +41,10 @@ class PegawaiController extends Controller
     {
         $request->validate([
             'nama' => 'required|string',
-            'no_ktp' => 'required|string|unique:pegawai,no_ktp',
+            'no_ktp' => ['required', 'string', Rule::unique('pegawai', 'no_ktp')],
             'nip_unit' => 'nullable|string',
-            'unit_id' => 'required|exists:unit,id',
-            'shift_id' => 'nullable|exists:shift,id',
+            'unit_id' => ['required', Rule::exists('unit', 'id')],
+            'shift_id' => ['nullable', Rule::exists('shift', 'id')],
             'profesi' => 'nullable|string',
             'status' => 'nullable|in:aktif,nonaktif',
             'status_lain' => 'nullable|string',
@@ -61,10 +62,10 @@ class PegawaiController extends Controller
     {
         $request->validate([
             'nama' => 'sometimes|required|string',
-            'no_ktp' => 'sometimes|required|string|unique:pegawai,no_ktp,' . $id,
+            'no_ktp' => ['sometimes', 'required', 'string', Rule::unique('pegawai', 'no_ktp')->ignore($id)],
             'nip_unit' => 'nullable|string',
-            'unit_id' => 'sometimes|required|exists:unit,id',
-            'shift_id' => 'nullable|exists:shift,id',
+            'unit_id' => ['sometimes', 'required', Rule::exists('unit', 'id')],
+            'shift_id' => ['nullable', Rule::exists('shift', 'id')],
             'profesi' => 'nullable|string',
             'status' => 'nullable|in:aktif,nonaktif',
             'status_lain' => 'nullable|string',

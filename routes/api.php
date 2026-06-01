@@ -59,7 +59,7 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::get('unit/get-by-id/{id}', [UnitController::class, 'show']);
     Route::post('unit/create', [UnitController::class, 'store']);
     Route::put('unit/update/{id}', [UnitController::class, 'update']);
-    Route::post('unit/assign-pegawai', [UnitController::class, 'assignPegawai']);
+    Route::post('unit/add-pegawai-to-unit', [UnitController::class, 'addPegawaiTounit']);
     Route::delete('unit/delete/{id}', [UnitController::class, 'destroy']);
     Route::get('unit/get-unit', [UnitController::class, 'getUnit']);
     Route::get('unit/get-upk/{unit_id}', [UnitController::class, 'getUPK']);

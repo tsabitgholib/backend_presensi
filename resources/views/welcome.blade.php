@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>API PRESENSI YBWSA</title>
+    <title>API PRESENSI SMARTECH</title>
     <link href="https://fonts.bunny.net/css?family=poppins:400,600,700&display=swap" rel="stylesheet">
 
     <style>
@@ -11,7 +11,7 @@
             margin: 0;
             height: 100vh;
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #23a04dff, #1b833aff);
+            background: linear-gradient(135deg, rgb(60, 31, 201), rgb(60, 31, 231));
             color: white;
             display: flex;
             align-items: center;
@@ -59,11 +59,11 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="glow">API PRESENSI YBWSA</h1>
+        <h1 class="glow">API PRESENSI SMARTECH</h1>
     </div>
 
     <div class="footer">
-        &copy; {{ date('Y') }} YBWSA. All rights reserved.
+        &copy; {{ date('Y') }} SMARTECH. All rights reserved.
     </div>
 </body>
 </html>
